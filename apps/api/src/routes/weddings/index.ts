@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import hostedRouter from './hosted';
+import invitedRouter from './invited';
 import createRouter from './create';
 import getAndUpdateRouter from './get';
 import eventsRouter from './events';
@@ -9,6 +10,7 @@ import photosRouter from './photos';
 const router = Router();
 
 router.use('/hosted', hostedRouter);
+router.use('/invited', invitedRouter);
 router.use(createRouter);
 router.use('/', getAndUpdateRouter);
 router.use('/:weddingId/events', eventsRouter);

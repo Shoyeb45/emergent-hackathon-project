@@ -10,6 +10,7 @@ import {
 } from '../../core/api-response';
 import { ForbiddenError, NotFoundError } from '../../core/api-error';
 import weddingRepo from '../../database/repositories/wedding.repo';
+import guestRepo from '../../database/repositories/guest.repo';
 import eventRepo from '../../database/repositories/event.repo';
 import authMiddleware from '../../middlewares/auth.middleware';
 import { timeStringToMinutes, eventsWithTimeStrings } from '../../helpers/time';
@@ -101,8 +102,11 @@ router.get(
         const userId = req.user.id;
         const hostId = await weddingRepo.getHostId(weddingId);
         if (hostId === null) throw new NotFoundError('Wedding not found.');
-        if (hostId !== userId)
-            throw new ForbiddenError('Access denied.');
+        const isHost = hostId === userId;
+        const isGuest =
+            !isHost &&
+            (await guestRepo.findFirstByWeddingAndUser(weddingId, userId));
+        if (!isHost && !isGuest) throw new ForbiddenError('Access denied.');
 
         const events = await eventRepo.findManyByWeddingId(weddingId);
         new SuccessResponse('Events.', eventsWithTimeStrings(events)).send(res);

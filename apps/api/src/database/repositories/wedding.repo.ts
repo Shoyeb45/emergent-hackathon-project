@@ -24,6 +24,38 @@ export async function findManyByHostId(hostId: number) {
   });
 }
 
+export async function findManyByGuestUserId(userId: number) {
+  return prisma.wedding.findMany({
+    where: {
+      guests: {
+        some: { userId },
+      },
+    },
+    include: {
+      host: { select: { id: true, name: true } },
+      events: {
+        orderBy: { displayOrder: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          eventDate: true,
+          startTime: true,
+          endTime: true,
+          eventType: true,
+          location: true,
+        },
+      },
+      guests: {
+        where: { userId },
+        select: { id: true, rsvpStatus: true },
+      },
+      stats: true,
+      _count: { select: { events: true, guests: true, photos: true } },
+    },
+    orderBy: { weddingDate: 'desc' },
+  });
+}
+
 export async function findById(weddingId: string) {
   return prisma.wedding.findUnique({
     where: { id: weddingId },
@@ -106,6 +138,7 @@ export async function update(weddingId: string, data: Record<string, unknown>) {
 
 export default {
   findManyByHostId,
+  findManyByGuestUserId,
   findById,
   findByIdMinimal,
   getHostId,
