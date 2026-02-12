@@ -1,84 +1,29 @@
-import { RoleCode } from '@prisma/client';
-import { InternalError } from '../../core/api-error';
 import { AuthUser } from '../../types/user';
 import { prisma } from '..';
 
 async function findByEmail(email: string): Promise<AuthUser | null> {
     const user = await prisma.user.findUnique({
         where: { email },
-        include: {
-            roles: {
-                where: {
-                    role: {
-                        status: true,
-                    },
-                },
-                include: {
-                    role: {
-                        select: {
-                            id: true,
-                            code: true,
-                            status: true,
-                        },
-                    },
-                },
-            },
-        },
     });
-
-    if (!user) return null;
-
-    return {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        password: user.password,
-        roles: user.roles.map((ur) => ({
-            id: ur.role.id,
-            code: ur.role.code as RoleCode,
-            status: ur.role.status,
-        })),
-        verified: user.verified,
-        status: user.status,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-    };
+    return user;
 }
 
 async function create(
-    userData: { name: string; email: string; password: string },
+    userData: { name: string; email: string; password: string; phone?: string },
     accessTokenKey: string,
     refreshTokenKey: string,
-    roleCode: RoleCode,
 ) {
-    // Find or get the role
-    const role = await prisma.role.findUnique({
-        where: { code: roleCode },
-    });
-
-    if (!role) throw new InternalError('Role must be defined.');
-
-    // Create user and role relation in a transaction
-    const result = await prisma.$transaction(async (tx: typeof prisma) => {
-        // Create user
+    const result = await prisma.$transaction(async (tx) => {
         const user = await tx.user.create({
             data: {
                 name: userData.name,
                 email: userData.email,
                 password: userData.password,
+                phone: userData.phone ?? null,
             },
         });
 
-        // Create user-role relation
-        await tx.userRoleRelation.create({
-            data: {
-                userId: user.id,
-                roleId: role.id,
-            },
-        });
-
-        // Create keystore
-        const keystoreData = await tx.keystore.create({
+        const keystore = await tx.keystore.create({
             data: {
                 clientId: user.id,
                 primaryKey: accessTokenKey,
@@ -86,58 +31,7 @@ async function create(
             },
         });
 
-        const keystore = {
-            id: keystoreData.id,
-            clientId: keystoreData.clientId,
-            primaryKey: keystoreData.primaryKey,
-            secondaryKey: keystoreData.secondaryKey,
-            status: keystoreData.status,
-            createdAt: keystoreData.createdAt,
-            updatedAt: keystoreData.updatedAt,
-        };
-
-        // Get user with roles
-        const userWithRoles = await tx.user.findUnique({
-            where: { id: user.id },
-            include: {
-                roles: {
-                    include: {
-                        role: true,
-                    },
-                },
-            },
-        });
-
-        return {
-            user: {
-                id: userWithRoles!.id,
-                name: userWithRoles!.name,
-                email: userWithRoles!.email,
-                password: userWithRoles!.password,
-                roles: userWithRoles!.roles.map(
-                    (ur: {
-                        role: {
-                            id: number;
-                            code: string;
-                            status: boolean;
-                            createdAt: Date;
-                            updatedAt: Date;
-                        };
-                    }) => ({
-                        id: ur.role.id,
-                        code: ur.role.code as RoleCode,
-                        status: ur.role.status,
-                        createdAt: ur.role.createdAt,
-                        updatedAt: ur.role.updatedAt,
-                    }),
-                ),
-                verified: userWithRoles!.verified,
-                status: userWithRoles!.status,
-                createdAt: userWithRoles!.createdAt,
-                updatedAt: userWithRoles!.updatedAt,
-            },
-            keystore,
-        };
+        return { user, keystore };
     });
 
     return result;
@@ -145,53 +39,9 @@ async function create(
 
 async function findById(id: number): Promise<AuthUser | null> {
     const user = await prisma.user.findFirst({
-        where: {
-            id,
-            status: true,
-        },
-        include: {
-            roles: {
-                where: {
-                    role: {
-                        status: true,
-                    },
-                },
-                include: {
-                    role: true,
-                },
-            },
-        },
+        where: { id, status: true },
     });
-
-    if (!user) return null;
-
-    return {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        password: user.password,
-        roles: user.roles.map(
-            (ur: {
-                role: {
-                    id: number;
-                    code: string;
-                    status: boolean;
-                    createdAt: Date;
-                    updatedAt: Date;
-                };
-            }) => ({
-                id: ur.role.id,
-                code: ur.role.code as RoleCode,
-                status: ur.role.status,
-                createdAt: ur.role.createdAt,
-                updatedAt: ur.role.updatedAt,
-            }),
-        ),
-        verified: user.verified,
-        status: user.status,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-    };
+    return user;
 }
 
 async function checkById(id: number) {
@@ -206,10 +56,72 @@ async function checkByEmail(email: string) {
     });
 }
 
+async function update(
+    id: number,
+    data: {
+        password?: string;
+        verified?: boolean;
+        faceEncodingId?: string;
+        faceSampleUploaded?: boolean;
+        passwordResetOtp?: string | null;
+        passwordResetOtpExpiresAt?: Date | null;
+    },
+) {
+    return prisma.user.update({
+        where: { id },
+        data,
+    });
+}
+
+async function setPasswordResetOtp(
+    userId: number,
+    otp: string,
+    expiresAt: Date,
+): Promise<void> {
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            passwordResetOtp: otp,
+            passwordResetOtpExpiresAt: expiresAt,
+        },
+    });
+}
+
+async function clearPasswordResetOtp(userId: number): Promise<void> {
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            passwordResetOtp: null,
+            passwordResetOtpExpiresAt: null,
+        },
+    });
+}
+
+/** Create user only (no keystore). Used when adding guests who do not have an account yet. */
+async function createUserOnly(data: {
+    name: string;
+    email: string;
+    password: string;
+}) {
+    return prisma.user.create({
+        data: {
+            name: data.name,
+            email: data.email,
+            password: data.password,
+            verified: false,
+            status: true,
+        },
+    });
+}
+
 export default {
     findByEmail,
     create,
+    createUserOnly,
     findById,
     checkById,
     checkByEmail,
+    update,
+    setPasswordResetOtp,
+    clearPasswordResetOtp,
 };

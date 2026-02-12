@@ -7,7 +7,7 @@ import { BadRequestError } from '../../core/api-error';
 import crypto from 'crypto';
 import { createTokens } from '../../core/auth-utils';
 import { getUserData } from './../../core/utils';
-import { SuccessResponse } from '../../core/api-response';
+import { SuccessCreatedResponse } from '../../core/api-response';
 import { ValidationSource } from '../../helpers/validator';
 import bcryptjs from 'bcryptjs';
 // import { RoleCode } from '@prisma/client';
@@ -15,32 +15,33 @@ import { setCookies } from '../../core/cookie-utils';
 import { registry } from '../../docs/swagger';
 
 registry.registerPath({
-  method: 'post',
-  path: '/auth/signup',
-  summary: 'User Signup',
-  description: 'Register a new user. Returns user data and tokens. Requires API key.',
-  tags: ['Auth'],
-  security: [{ apiKey: [] }],
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: schema.signup,
+    method: 'post',
+    path: '/auth/signup',
+    summary: 'User Signup',
+    description:
+        'Register a new user. Returns user data and tokens. Requires API key.',
+    tags: ['Auth'],
+    security: [],
+    request: {
+        body: {
+            content: {
+                'application/json': {
+                    schema: schema.signup,
+                },
+            },
         },
-      },
     },
-  },
-  responses: {
-    201: {
-      description: 'User created successfully',
+    responses: {
+        201: {
+            description: 'User created successfully',
+        },
+        400: {
+            description: 'Validation error or user already registered',
+        },
+        403: {
+            description: 'Missing or invalid API key',
+        },
     },
-    400: {
-      description: 'Validation error or user already registered',
-    },
-    403: {
-      description: 'Missing or invalid API key',
-    },
-  },
 });
 
 const router = Router();
@@ -63,6 +64,7 @@ router.post(
                 name: req.body.name,
                 email: req.body.email,
                 password: hashedPassword,
+                phone: req.body.phone,
             },
             accessTokenKey,
             refreshTokenKey,
@@ -79,7 +81,7 @@ router.post(
         // Set cookie for browser
         setCookies(res, tokens);
 
-        new SuccessResponse('Signup successful.', {
+        new SuccessCreatedResponse('Signup successful.', {
             user: userData,
             tokens: tokens,
         }).send(res);

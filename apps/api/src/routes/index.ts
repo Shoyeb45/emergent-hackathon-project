@@ -1,19 +1,23 @@
-import { Router, RequestHandler } from 'express';
+import { Router } from 'express';
 
 import healthRoutes from './health/index.js';
-import { apiKeyMiddleware } from './auth/api-key.js';
-import permission from '../middlewares/permission.middleware.js';
 import authRoutes from './auth';
-import { Permission } from '@prisma/client';
+import weddingRoutes from './weddings/index.js';
+import eventsRoutes from './events/index.js';
+import inviteRoutes from './invite/index.js';
+import rsvpRoutes from './rsvp/index.js';
+import photoRoutes from './photos/index.js';
+import internalRoutes from './internal/index.js';
 
 const router = Router();
 
 router.use('/health', healthRoutes);
-
-router.use(apiKeyMiddleware);
-
-router.use(permission(Permission.GENERAL) as RequestHandler);
-
 router.use('/auth', authRoutes);
+router.use('/weddings', weddingRoutes);
+router.use('/events', eventsRoutes);
+router.use('/invite', inviteRoutes);
+router.use('/rsvp', rsvpRoutes);
+router.use('/photos', photoRoutes);
+router.use('/internal', internalRoutes);
 
 export default router;

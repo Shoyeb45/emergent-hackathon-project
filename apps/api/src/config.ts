@@ -10,8 +10,8 @@ export const port = process.env.PORT;
 
 /** Base URL for the API (used by Swagger / Try it out). Must be http or https. */
 export const serverUrl =
-  process.env.SERVER_URL ||
-  (port ? `http://localhost:${port}` : 'http://localhost:9090');
+    process.env.SERVER_URL ||
+    (port ? `http://localhost:${port}` : 'http://localhost:9090');
 
 // JWT token configuration
 export const tokenInfo = {
@@ -41,3 +41,16 @@ export const cookieOptions: CookieOptions = {
 export const logDirectory = process.env.LOG_DIRECTORY;
 
 export const dbUrl = process.env.DATABASE_URL ?? '';
+
+// AWS
+export const awsRegion = process.env.AWS_REGION ?? 'us-east-1';
+export const awsAccessKeyId = process.env.AWS_ACCESS_KEY_ID ?? '';
+export const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY ?? '';
+export const s3BucketName = process.env.S3_BUCKET_NAME ?? '';
+export const s3BucketUrl =
+    process.env.S3_BUCKET_URL ??
+    `https://${s3BucketName || 'bucket'}.s3.${awsRegion}.amazonaws.com`;
+
+// SES (email)
+export const sesFromEmail = process.env.SES_FROM_EMAIL ?? '';
+export const sesFromName = process.env.SES_FROM_NAME ?? 'Wedding Invitations';

@@ -12,29 +12,31 @@ datasource db {
 //============================================
 
 model User {
-  id                   Int       @id @default(autoincrement())
-  name                 String    @db.VarChar(255)
-  email                String    @unique @db.VarChar(255)
-  password             String    @db.VarChar(255)
-  phone                String?   @db.VarChar(20)
-  profileImageUrl      String?   @map("profile_image_url") @db.Text
-  status               Boolean   @default(true)
-  verified             Boolean   @default(false)
-  faceEncodingId       String?   @map("face_encoding_id") @db.VarChar(255)
-  faceSampleUploaded   Boolean   @default(false) @map("face_sample_uploaded")
-  
-  createdAt            DateTime  @default(now()) @map("created_at")
-  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at")
+  id                 Int       @id @default(autoincrement())
+  name               String    @db.VarChar(255)
+  email              String    @unique @db.VarChar(255)
+  password           String    @db.VarChar(255)
+  phone              String?   @db.VarChar(20)
+  profileImageUrl    String?   @map("profile_image_url") @db.Text
+  status             Boolean   @default(true)
+  verified           Boolean   @default(false)
+  faceEncodingId     String?   @map("face_encoding_id") @db.VarChar(255)
+  faceSampleUploaded Boolean   @default(false) @map("face_sample_uploaded")
+  passwordResetOtp   String?   @map("password_reset_otp") @db.VarChar(10)
+  passwordResetOtpExpiresAt DateTime? @map("password_reset_otp_expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  keystores            Keystore[]
-  hostedWeddings       Wedding[]
-  guests               Guest[]
-  uploadedPhotos       Photo[]    @relation("PhotoUploader")
-  moderatedPhotos      Photo[]    @relation("PhotoModerator")
-  photoTags            PhotoTag[] @relation("UserPhotoTags")
-  verifiedTags         PhotoTag[] @relation("TagVerifier")
-  faceSamples          FaceSample[]
+  keystores       Keystore[]
+  hostedWeddings  Wedding[]
+  guests          Guest[]
+  uploadedPhotos  Photo[]      @relation("PhotoUploader")
+  moderatedPhotos Photo[]      @relation("PhotoModerator")
+  photoTags       PhotoTag[]   @relation("UserPhotoTags")
+  verifiedTags    PhotoTag[]   @relation("TagVerifier")
+  faceSamples     FaceSample[]
 
   @@index([email])
   @@index([email, status], map: "idx_user_email_status")
@@ -43,17 +45,17 @@ model User {
 }
 
 model Keystore {
-  id           Int      @id @default(autoincrement())
-  clientId     Int      @map("client_id")
-  primaryKey   String   @map("primary_key") @db.VarChar(500)
-  secondaryKey String   @map("secondary_key") @db.VarChar(500)
-  status       Boolean  @default(true)
-  
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  id           Int     @id @default(autoincrement())
+  clientId     Int     @map("client_id")
+  primaryKey   String  @map("primary_key") @db.VarChar(500)
+  secondaryKey String  @map("secondary_key") @db.VarChar(500)
+  status       Boolean @default(true)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  client       User     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client User @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([clientId], map: "idx_keystore_client")
   @@index([clientId, primaryKey, status], map: "idx_keystore_auth")
@@ -66,27 +68,27 @@ model Keystore {
 //============================================
 
 model Wedding {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  hostId          Int      @map("host_id")
-  title           String   @db.VarChar(255)
-  description     String?  @db.Text
-  weddingDate     DateTime @map("wedding_date") @db.Date
-  venue           String?  @db.VarChar(500)
-  venueAddress    String?  @map("venue_address") @db.Text
-  coverImageUrl   String?  @map("cover_image_url") @db.Text
-  autoTagPhotos   Boolean  @default(true) @map("auto_tag_photos")
-  status          String   @default("planning") @db.VarChar(20) // planning | active | completed | cancelled
-  
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hostId        Int      @map("host_id")
+  title         String   @db.VarChar(255)
+  description   String?  @db.Text
+  weddingDate   DateTime @map("wedding_date") @db.Date
+  venue         String?  @db.VarChar(500)
+  venueAddress  String?  @map("venue_address") @db.Text
+  coverImageUrl String?  @map("cover_image_url") @db.Text
+  autoTagPhotos Boolean  @default(true) @map("auto_tag_photos")
+  status        String   @default("planning") @db.VarChar(20) // planning | active | completed | cancelled
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  host            User              @relation(fields: [hostId], references: [id], onDelete: Cascade)
-  events          Event[]
-  guests          Guest[]
-  photos          Photo[]
+  host              User                @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  events            Event[]
+  guests            Guest[]
+  photos            Photo[]
   aiProcessingQueue AiProcessingQueue[]
-  stats           WeddingStats?
+  stats             WeddingStats?
 
   @@index([hostId], map: "idx_wedding_host")
   @@index([weddingDate], map: "idx_wedding_date")
@@ -101,29 +103,29 @@ model Wedding {
 //============================================
 
 model Event {
-  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  weddingId           String    @map("wedding_id") @db.Uuid
-  name                String    @db.VarChar(255) // Haldi, Sangeet, Engagement, Reception, Mehendi, etc.
-  description         String?   @db.Text
-  eventDate           DateTime  @map("event_date") @db.Date
-  startTime           DateTime  @map("start_time") @db.Time
-  endTime             DateTime? @map("end_time") @db.Time
-  location            String?   @db.VarChar(500)
-  locationAddress     String?   @map("location_address") @db.Text
-  locationCoordinates String?   @map("location_coordinates") @db.Text // Stored as text, can be parsed
-  eventType           String?   @map("event_type") @db.VarChar(50) // haldi | sangeet | mehendi | engagement | ceremony | reception | custom
-  colorTheme          String?   @map("color_theme") @db.VarChar(7) // Hex color
-  icon                String?   @db.VarChar(50)
-  coverImageUrl       String?   @map("cover_image_url") @db.Text
-  dressCode           String?   @map("dress_code") @db.VarChar(255)
-  displayOrder        Int       @default(0) @map("display_order")
-  
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  weddingId           String   @map("wedding_id") @db.Uuid
+  name                String   @db.VarChar(255) // Haldi, Sangeet, Engagement, Reception, Mehendi, etc.
+  description         String?  @db.Text
+  eventDate           DateTime @map("event_date") @db.Date
+  startTime           Int      @map("start_time")
+  endTime             Int?     @map("end_time")
+  location            String?  @db.VarChar(500)
+  locationAddress     String?  @map("location_address") @db.Text
+  locationCoordinates String?  @map("location_coordinates") @db.Text // Stored as text, can be parsed
+  eventType           String?  @map("event_type") @db.VarChar(50) // haldi | sangeet | mehendi | engagement | ceremony | reception | custom
+  colorTheme          String?  @map("color_theme") @db.VarChar(7) // Hex color
+  icon                String?  @db.VarChar(50)
+  coverImageUrl       String?  @map("cover_image_url") @db.Text
+  dressCode           String?  @map("dress_code") @db.VarChar(255)
+  displayOrder        Int      @default(0) @map("display_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  wedding             Wedding   @relation(fields: [weddingId], references: [id], onDelete: Cascade)
-  photos              Photo[]
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  photos  Photo[]
 
   @@index([weddingId], map: "idx_event_wedding")
   @@index([eventDate], map: "idx_event_date")
@@ -138,28 +140,28 @@ model Event {
 //============================================
 
 model Guest {
-  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  weddingId           String    @map("wedding_id") @db.Uuid
-  userId              Int?      @map("user_id") // Linked after account creation
-  uploadPermission    Boolean   @default(false) @map("upload_permission")
-  invitationToken     String    @unique @map("invitation_token") @db.VarChar(64)
-  invitationSentAt    DateTime? @map("invitation_sent_at")
-  rsvpStatus          String    @default("pending") @map("rsvp_status") @db.VarChar(20) // pending | accepted | declined
-  rsvpRespondedAt     DateTime? @map("rsvp_responded_at")
-  rsvpNote            String?   @map("rsvp_note") @db.Text
-  faceSampleProvided  Boolean   @default(false) @map("face_sample_provided")
-  faceEncodingId      String?   @map("face_encoding_id") @db.VarChar(255)
-  photosProcessed     Boolean   @default(false) @map("photos_processed")
-  
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  weddingId          String    @map("wedding_id") @db.Uuid
+  userId             Int?      @map("user_id") // Linked after account creation
+  uploadPermission   Boolean   @default(false) @map("upload_permission")
+  invitationToken    String    @unique @map("invitation_token") @db.VarChar(64)
+  invitationSentAt   DateTime? @map("invitation_sent_at")
+  rsvpStatus         String    @default("pending") @map("rsvp_status") @db.VarChar(20) // pending | accepted | declined
+  rsvpRespondedAt    DateTime? @map("rsvp_responded_at")
+  rsvpNote           String?   @map("rsvp_note") @db.Text
+  faceSampleProvided Boolean   @default(false) @map("face_sample_provided")
+  faceEncodingId     String?   @map("face_encoding_id") @db.VarChar(255)
+  photosProcessed    Boolean   @default(false) @map("photos_processed")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  wedding             Wedding      @relation(fields: [weddingId], references: [id], onDelete: Cascade)
-  user                User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
-  uploadedPhotos      Photo[]
-  photoTags           PhotoTag[]
-  faceSamples         FaceSample[]
+  wedding        Wedding      @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  uploadedPhotos Photo[]
+  photoTags      PhotoTag[]
+  faceSamples    FaceSample[]
 
   @@index([weddingId], map: "idx_guest_wedding")
   @@index([userId], map: "idx_guest_user")
@@ -176,40 +178,40 @@ model Guest {
 //============================================
 
 model Photo {
-  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  weddingId          String    @map("wedding_id") @db.Uuid
-  eventId            String?   @map("event_id") @db.Uuid
-  uploadedByUserId   Int       @map("uploaded_by_user_id")
-  uploadedByGuestId  String?   @map("uploaded_by_guest_id") @db.Uuid
-  fileName           String    @map("file_name") @db.VarChar(255)
-  originalUrl        String    @map("original_url") @db.Text
-  thumbnailUrl       String?   @map("thumbnail_url") @db.Text
-  fileSize           Int?      @map("file_size")
-  width              Int?
-  height             Int?
-  mimeType           String?   @map("mime_type") @db.VarChar(50)
-  caption            String?   @db.Text
-  takenAt            DateTime? @map("taken_at")
-  uploadedAt         DateTime  @default(now()) @map("uploaded_at")
-  facesDetected      Int       @default(0) @map("faces_detected")
-  processingStatus   String    @default("pending") @map("processing_status") @db.VarChar(20) // pending | processing | completed | failed
-  processedAt        DateTime? @map("processed_at")
-  aiErrorMessage     String?   @map("ai_error_message") @db.Text
-  isPublic           Boolean   @default(true) @map("is_public")
-  isApproved         Boolean   @default(true) @map("is_approved")
-  moderatedBy        Int?      @map("moderated_by")
-  
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at")
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  weddingId         String    @map("wedding_id") @db.Uuid
+  eventId           String?   @map("event_id") @db.Uuid
+  uploadedByUserId  Int       @map("uploaded_by_user_id")
+  uploadedByGuestId String?   @map("uploaded_by_guest_id") @db.Uuid
+  fileName          String    @map("file_name") @db.VarChar(255)
+  originalUrl       String    @map("original_url") @db.Text
+  thumbnailUrl      String?   @map("thumbnail_url") @db.Text
+  fileSize          Int?      @map("file_size")
+  width             Int?
+  height            Int?
+  mimeType          String?   @map("mime_type") @db.VarChar(50)
+  caption           String?   @db.Text
+  takenAt           DateTime? @map("taken_at")
+  uploadedAt        DateTime  @default(now()) @map("uploaded_at")
+  facesDetected     Int       @default(0) @map("faces_detected")
+  processingStatus  String    @default("pending") @map("processing_status") @db.VarChar(20) // pending | processing | completed | failed
+  processedAt       DateTime? @map("processed_at")
+  aiErrorMessage    String?   @map("ai_error_message") @db.Text
+  isPublic          Boolean   @default(true) @map("is_public")
+  isApproved        Boolean   @default(true) @map("is_approved")
+  moderatedBy       Int?      @map("moderated_by")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  wedding            Wedding           @relation(fields: [weddingId], references: [id], onDelete: Cascade)
-  event              Event?            @relation(fields: [eventId], references: [id], onDelete: SetNull)
-  uploadedByUser     User              @relation("PhotoUploader", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
-  uploadedByGuest    Guest?            @relation(fields: [uploadedByGuestId], references: [id], onDelete: SetNull)
-  moderator          User?             @relation("PhotoModerator", fields: [moderatedBy], references: [id], onDelete: SetNull)
-  photoTags          PhotoTag[]
-  aiProcessingQueue  AiProcessingQueue?
+  wedding           Wedding            @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  event             Event?             @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  uploadedByUser    User               @relation("PhotoUploader", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  uploadedByGuest   Guest?             @relation(fields: [uploadedByGuestId], references: [id], onDelete: SetNull)
+  moderator         User?              @relation("PhotoModerator", fields: [moderatedBy], references: [id], onDelete: SetNull)
+  photoTags         PhotoTag[]
+  aiProcessingQueue AiProcessingQueue?
 
   @@index([weddingId], map: "idx_photo_wedding")
   @@index([eventId], map: "idx_photo_event")
@@ -239,14 +241,14 @@ model PhotoTag {
   verifiedAt      DateTime? @map("verified_at")
   isPrimaryPerson Boolean   @default(false) @map("is_primary_person")
   rejected        Boolean   @default(false)
-  
-  createdAt       DateTime  @default(now()) @map("created_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
-  photo           Photo     @relation(fields: [photoId], references: [id], onDelete: Cascade)
-  guest           Guest?    @relation(fields: [guestId], references: [id], onDelete: Cascade)
-  user            User?     @relation("UserPhotoTags", fields: [userId], references: [id], onDelete: Cascade)
-  verifier        User?     @relation("TagVerifier", fields: [verifiedBy], references: [id], onDelete: SetNull)
+  photo    Photo  @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  guest    Guest? @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  user     User?  @relation("UserPhotoTags", fields: [userId], references: [id], onDelete: Cascade)
+  verifier User?  @relation("TagVerifier", fields: [verifiedBy], references: [id], onDelete: SetNull)
 
   @@index([photoId], map: "idx_tag_photo")
   @@index([guestId], map: "idx_tag_guest")
@@ -277,13 +279,13 @@ model AiProcessingQueue {
   processingTimeMs Int?      @map("processing_time_ms")
   facesFound       Int       @default(0) @map("faces_found")
   matchesCreated   Int       @default(0) @map("matches_created")
-  
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
-  photo            Photo     @relation(fields: [photoId], references: [id], onDelete: Cascade)
-  wedding          Wedding   @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  photo   Photo   @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
 
   @@index([photoId], map: "idx_queue_photo")
   @@index([status], map: "idx_queue_status")
@@ -306,12 +308,12 @@ model FaceSample {
   encodingQuality Decimal? @map("encoding_quality") @db.Decimal(5, 4)
   isPrimary       Boolean  @default(true) @map("is_primary")
   source          String?  @db.VarChar(50) // upload | tagged_photo | profile
-  
-  createdAt       DateTime @default(now()) @map("created_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
-  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  guest           Guest?   @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  user  User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guest Guest? @relation(fields: [guestId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "idx_sample_user")
   @@index([guestId], map: "idx_sample_guest")
@@ -326,22 +328,22 @@ model FaceSample {
 //============================================
 
 model WeddingStats {
-  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  weddingId         String   @unique @map("wedding_id") @db.Uuid
-  totalGuests       Int      @default(0) @map("total_guests")
-  guestsAccepted    Int      @default(0) @map("guests_accepted")
-  guestsDeclined    Int      @default(0) @map("guests_declined")
-  guestsPending     Int      @default(0) @map("guests_pending")
-  totalEvents       Int      @default(0) @map("total_events")
-  totalPhotos       Int      @default(0) @map("total_photos")
-  totalPhotoViews   Int      @default(0) @map("total_photo_views")
-  photosProcessed   Int      @default(0) @map("photos_processed")
-  photosPending     Int      @default(0) @map("photos_pending")
-  totalFaceTags     Int      @default(0) @map("total_face_tags")
-  lastCalculatedAt  DateTime @default(now()) @map("last_calculated_at")
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  weddingId        String   @unique @map("wedding_id") @db.Uuid
+  totalGuests      Int      @default(0) @map("total_guests")
+  guestsAccepted   Int      @default(0) @map("guests_accepted")
+  guestsDeclined   Int      @default(0) @map("guests_declined")
+  guestsPending    Int      @default(0) @map("guests_pending")
+  totalEvents      Int      @default(0) @map("total_events")
+  totalPhotos      Int      @default(0) @map("total_photos")
+  totalPhotoViews  Int      @default(0) @map("total_photo_views")
+  photosProcessed  Int      @default(0) @map("photos_processed")
+  photosPending    Int      @default(0) @map("photos_pending")
+  totalFaceTags    Int      @default(0) @map("total_face_tags")
+  lastCalculatedAt DateTime @default(now()) @map("last_calculated_at")
 
   // Relations
-  wedding           Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  wedding Wedding @relation(fields: [weddingId], references: [id], onDelete: Cascade)
 
   @@index([weddingId], map: "idx_stats_wedding")
   @@map("wedding_stats")

@@ -1,26 +1,46 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Royal wedding theme */
+  --color-burgundy: #4a0e2b;
+  --color-burgundy-dark: #2b0a1a;
+  --color-gold: #c6a75e;
+  --color-gold-soft: rgba(198, 167, 94, 0.15);
+  --color-champagne: #faf7f2;
+  --color-charcoal: #2b2b2b;
+  --color-off-white: #f8f8f8;
+  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #faf7f2;
+  --foreground: #2b2b2b;
+  --accent: #c6a75e;
+  --dark-bg: #4a0e2b;
+  --dark-bg-gradient: linear-gradient(135deg, #4a0e2b 0%, #2b0a1a 100%);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+.font-serif {
+  font-family: var(--font-playfair), Georgia, serif;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Gold glow utility */
+.shadow-gold {
+  box-shadow: 0 4px 24px rgba(198, 167, 94, 0.25);
+}
+
+.shadow-gold-lg {
+  box-shadow: 0 8px 32px rgba(198, 167, 94, 0.3);
 }

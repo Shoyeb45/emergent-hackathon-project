@@ -1,11 +1,6 @@
-import { Header } from './../../core/utils';
 import { ZodAuthBearer, ZodCookies } from './../../helpers/validator';
 import z from 'zod';
 import { registry } from '../../docs/swagger';
-
-const apiKey = z.object({
-    [Header.API_KEY]: z.string(),
-});
 
 const auth = z
     .object({
@@ -32,10 +27,11 @@ const signup = z.object({
     name: z.string().min(3),
     email: z.email(),
     password: z.string().min(6),
+    phone: z.string().optional(),
 });
 
 const signin = z.object({
-    email: z.email(),
+    email: z.string().email(),
     password: z.string().min(6),
 });
 
@@ -60,13 +56,26 @@ const refreshToken = z
         },
     );
 
+const forgotPassword = z.object({
+    email: z.string().email(),
+});
+
+const resetPassword = z.object({
+    email: z.string().email(),
+    otp: z.string().length(6, 'OTP must be 6 digits'),
+    newPassword: z.string().min(6),
+});
+
 export default {
-    apiKey,
     auth,
     signup,
     signin,
     refreshToken,
+    forgotPassword,
+    resetPassword,
 };
 
 registry.register('SignupSchema', signup);
 registry.register('SigninSchema', signin);
+registry.register('ForgotPasswordSchema', forgotPassword);
+registry.register('ResetPasswordSchema', resetPassword);
