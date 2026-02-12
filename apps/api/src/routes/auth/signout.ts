@@ -8,23 +8,24 @@ import authMiddleware from '../../middlewares/auth.middleware';
 import { registry } from '../../docs/swagger';
 
 registry.registerPath({
-  method: 'delete',
-  path: '/auth/signout',
-  summary: 'User Signout',
-  description: 'Logout and invalidate the current session. Requires API key and Bearer JWT.',
-  tags: ['Auth'],
-  security: [{ apiKey: [], bearerAuth: [] }],
-  responses: {
-    200: {
-      description: 'Logout success',
+    method: 'delete',
+    path: '/auth/signout',
+    summary: 'User Signout',
+    description:
+        'Logout and invalidate the current session. Requires API key and Bearer JWT.',
+    tags: ['Auth'],
+    security: [{ bearerAuth: [] }],
+    responses: {
+        200: {
+            description: 'Logout success',
+        },
+        401: {
+            description: 'Invalid or missing access token',
+        },
+        403: {
+            description: 'Missing or invalid API key',
+        },
     },
-    401: {
-      description: 'Invalid or missing access token',
-    },
-    403: {
-      description: 'Missing or invalid API key',
-    },
-  },
 });
 
 const router = Router();

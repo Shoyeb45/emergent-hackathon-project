@@ -2,7 +2,6 @@ import { asyncHandler } from '../../core/async-handler';
 import { Router } from 'express';
 import { validator } from '../../middlewares/validator.middleware';
 import schema from './schema';
-import { PublicRequest } from '../../types/app-requests';
 import UserRepo from '../../database/repositories/user.repo';
 import { AuthFailureError, BadRequestError } from '../../core/api-error';
 import crypto from 'crypto';
@@ -15,35 +14,36 @@ import { setCookies } from '../../core/cookie-utils';
 import { registry } from '../../docs/swagger';
 
 registry.registerPath({
-  method: 'post',
-  path: '/auth/signin',
-  summary: 'User Signin',
-  description: 'Login with email and password. Returns user data and tokens. Requires API key.',
-  tags: ['Auth'],
-  security: [{ apiKey: [] }],
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: schema.signin,
+    method: 'post',
+    path: '/auth/signin',
+    summary: 'User Signin',
+    description:
+        'Login with email and password. Returns user data and tokens. Requires API key.',
+    tags: ['Auth'],
+    security: [],
+    request: {
+        body: {
+            content: {
+                'application/json': {
+                    schema: schema.signin,
+                },
+            },
         },
-      },
     },
-  },
-  responses: {
-    200: {
-      description: 'Login success',
+    responses: {
+        200: {
+            description: 'Login success',
+        },
+        400: {
+            description: 'Validation error or user not registered',
+        },
+        401: {
+            description: 'Authentication failure (invalid password)',
+        },
+        403: {
+            description: 'Missing or invalid API key',
+        },
     },
-    400: {
-      description: 'Validation error or user not registered',
-    },
-    401: {
-      description: 'Authentication failure (invalid password)',
-    },
-    403: {
-      description: 'Missing or invalid API key',
-    },
-  },
 });
 
 const router = Router();
@@ -51,7 +51,7 @@ const router = Router();
 router.post(
     '/',
     validator(schema.signin, ValidationSource.BODY),
-    asyncHandler(async (req: PublicRequest, res) => {
+    asyncHandler(async (req, res) => {
         const user = await UserRepo.findByEmail(req.body.email);
 
         if (!user) throw new BadRequestError('User not registered.');
