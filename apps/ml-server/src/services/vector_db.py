@@ -9,6 +9,28 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _pinecone_metadata(value):
+    """
+    Convert a value to a type Pinecone accepts: str, int, float, bool, or list of str.
+    """
+    if value is None:
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, (list, tuple)):
+        if not value:
+            return []
+        if all(isinstance(x, str) for x in value):
+            return list(value)
+        return [str(x) for x in value]
+    return str(value)
+
+
+def _sanitize_metadata(metadata: Dict) -> Dict:
+    """Ensure all metadata values are Pinecone-acceptable."""
+    return {k: _pinecone_metadata(v) for k, v in metadata.items() if v is not None}
+
+
 class VectorDBService:
     """
     Handles vector storage and similarity search
@@ -52,8 +74,9 @@ class VectorDBService:
             }
         """
         try:
+            safe_meta = _sanitize_metadata(metadata)
             self.index.upsert(
-                vectors=[{"id": face_id, "values": embedding, "metadata": metadata}]
+                vectors=[{"id": face_id, "values": embedding, "metadata": safe_meta}]
             )
             logger.debug(f"Upserted face: {face_id}")
             return True
@@ -76,7 +99,7 @@ class VectorDBService:
                 {
                     "id": face["id"],
                     "values": face["embedding"],
-                    "metadata": face["metadata"],
+                    "metadata": _sanitize_metadata(face.get("metadata") or {}),
                 }
                 for face in faces
             ]
@@ -127,18 +150,21 @@ class VectorDBService:
 
             # Filter by minimum score and format results
             matches = []
-            for match in results["matches"]:
-                if match["score"] >= min_score:
+            meta = results.get("matches", [])
+            for match in meta:
+                m = match.get("metadata") or {}
+                if match.get("score", 0) >= min_score:
                     matches.append(
                         {
                             "face_id": match["id"],
                             "score": match["score"],
-                            "photo_id": match["metadata"]["photo_id"],
-                            "user_id": match["metadata"].get("user_id"),
-                            "s3_url": match["metadata"]["s3_url"],
-                            "thumbnail_url": match["metadata"].get("thumbnail_url"),
-                            "bbox": match["metadata"]["bbox"],
-                            "confidence": match["metadata"].get("confidence"),
+                            "photo_id": m.get("photo_id"),
+                            "guest_id": m.get("guest_id"),
+                            "user_id": m.get("user_id"),
+                            "s3_url": m.get("s3_url") or m.get("photo_url"),
+                            "thumbnail_url": m.get("thumbnail_url"),
+                            "bbox": m.get("bbox"),
+                            "confidence": m.get("confidence"),
                         }
                     )
 
@@ -163,3 +189,22 @@ class VectorDBService:
     def get_stats(self) -> Dict:
         """Get index statistics"""
         return self.index.describe_index_stats()
+
+    def fetch_vectors(self, ids: List[str]) -> Dict[str, Dict]:
+        """
+        Fetch vectors and metadata by IDs.
+        Returns dict mapping id -> {"values": [...], "metadata": {...}}
+        """
+        try:
+            result = self.index.fetch(ids=ids)
+            vectors = result.get("vectors", {})
+            return {
+                vid: {
+                    "values": info.get("values"),
+                    "metadata": info.get("metadata") or {},
+                }
+                for vid, info in vectors.items()
+            }
+        except Exception as e:
+            logger.error("fetch_vectors failed: %s", e)
+            return {}

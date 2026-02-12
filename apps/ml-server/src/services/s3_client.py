@@ -9,7 +9,13 @@ logger = logging.getLogger(__name__)
 
 
 class S3Client:
-    def __init__(self, bucket_name: str, region: str = "us-east-1"):
+    def __init__(
+        self,
+        bucket_name: str,
+        region: str = (
+            os.getenv("AWS_REGION") if os.getenv("AWS_REGION") else "us-east-1"
+        ),
+    ):
         self.s3 = boto3.client(
             "s3",
             region_name=region,

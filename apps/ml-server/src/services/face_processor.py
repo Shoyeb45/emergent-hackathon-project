@@ -16,7 +16,8 @@ class FaceProcessor:
         det_size: Detection size (larger = more accurate but slower)
         """
         self.app = FaceAnalysis(
-            name=model_name, providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
+            # name=model_name, providers=["CUDAExecutionProvider", "CPUExecutionProvider"]
+            name=model_name, providers=["CPUExecutionProvider"]
         )
         self.app.prepare(ctx_id=0, det_size=det_size)
         logger.info(f"FaceProcessor initialized with model: {model_name}")
