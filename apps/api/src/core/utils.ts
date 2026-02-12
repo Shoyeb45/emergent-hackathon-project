@@ -7,6 +7,17 @@ export const enum Header {
 }
 
 export function getUserData(user: AuthUser) {
-    const data = objectManipulator.pick(user, ['id', 'name', 'roles', 'email']);
+    const data = objectManipulator.pick(user, [
+        'id',
+        'name',
+        'email',
+        'phone',
+        'verified',
+        'status',
+        'faceSampleUploaded',
+        'faceEncodingId',
+        'createdAt',
+        'updatedAt',
+    ]);
     return data;
 }

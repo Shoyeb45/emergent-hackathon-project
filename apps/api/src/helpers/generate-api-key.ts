@@ -1,30 +1,14 @@
 import crypto from 'crypto';
-import ApiKeyRepo from '../database/repositories/api-key.repo';
-import { connectDB } from '../database';
-import type { Permission } from '@prisma/client';
 
+/**
+ * Stub: API key is optional and validated via env API_KEY in middleware.
+ * No api_keys table in current schema.
+ */
 export async function createApiKey(
-    comments: string[],
-    permissions: Permission[],
+    _comments: string[],
+    _permissions: string[],
 ) {
     const key = crypto.randomBytes(32).toString('hex');
-
-    const newKey = await ApiKeyRepo.create(key, comments, permissions, 1);
-
-    if (!newKey) {
-        throw Error('Failed to generate API Key.');
-    }
-
-    console.log('Your API key:', key);
+    console.log('Generated API key (set API_KEY in env to enforce):', key);
     return key;
-}
-
-// auto run (tabhi jab test env)
-if (process.env.NODE_ENV !== 'test') {
-    connectDB()
-        .then(async () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await createApiKey(['API Key for testing.'], ['GENERAL' as any]);
-        })
-        .catch(() => {});
 }
