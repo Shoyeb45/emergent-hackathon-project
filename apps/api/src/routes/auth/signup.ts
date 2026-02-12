@@ -10,7 +10,7 @@ import { getUserData } from './../../core/utils';
 import { SuccessResponse } from '../../core/api-response';
 import { ValidationSource } from '../../helpers/validator';
 import bcryptjs from 'bcryptjs';
-import { RoleCode } from '@prisma/client';
+// import { RoleCode } from '@prisma/client';
 import { setCookies } from '../../core/cookie-utils';
 import { registry } from '../../docs/swagger';
 
@@ -66,7 +66,6 @@ router.post(
             },
             accessTokenKey,
             refreshTokenKey,
-            RoleCode.USER,
         );
 
         const tokens = await createTokens(
