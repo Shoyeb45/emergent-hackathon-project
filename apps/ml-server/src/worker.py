@@ -108,11 +108,14 @@ def _download_image_to_temp(url: str, suffix: str = ".jpg") -> Optional[str]:
         return None
 
 
-def _bbox_to_box(bbox: List[int]) -> Dict[str, int]:
-    """Convert [x1, y1, x2, y2] to {x, y, width, height}."""
+def _bbox_to_box(bbox: List[Any]) -> Dict[str, int]:
+    """Convert [x1, y1, x2, y2] to {x, y, width, height}. Handles str/int/float (e.g. from Pinecone metadata)."""
     if len(bbox) < 4:
         return {}
-    x1, y1, x2, y2 = bbox[:4]
+    try:
+        x1, y1, x2, y2 = (float(bbox[i]) for i in range(4))
+    except (TypeError, ValueError):
+        return {}
     return {"x": int(x1), "y": int(y1), "width": int(x2 - x1), "height": int(y2 - y1)}
 
 
@@ -265,6 +268,55 @@ def process_photo_job(photo_id: str, vector_db: VectorDBService) -> bool:
     return True
 
 
+def _match_sample_to_photo_faces(
+    vector_db: VectorDBService,
+    *,
+    embedding: List[float],
+    guest_id: Optional[str],
+    user_id: Optional[int],
+    wedding_ids: List[str],
+) -> int:
+    """
+    When a new face sample is added, search existing photo faces in Pinecone
+    and create PhotoTags for matches. This avoids reprocessing every photo
+    (face -> image refs; one search instead of N photo jobs).
+    Returns the number of tags created.
+    """
+    matches = vector_db.search_photo_faces(
+        query_embedding=embedding,
+        wedding_ids=wedding_ids,
+        top_k=500,
+        min_score=SIMILARITY_THRESHOLD,
+    )
+    created = 0
+    for match in matches:
+        photo_id = match.get("photo_id")
+        if not photo_id:
+            continue
+        bbox_raw = match.get("bbox")
+        if isinstance(bbox_raw, list) and len(bbox_raw) >= 4:
+            bounding_box = _bbox_to_box(bbox_raw)
+        else:
+            bounding_box = None
+        ok = post_photo_tag(
+            photo_id,
+            guest_id=guest_id,
+            user_id=user_id,
+            confidence_score=float(match["score"]) if match.get("score") is not None else None,
+            bounding_box=bounding_box,
+            face_encoding_id=match.get("face_id"),
+        )
+        if ok:
+            created += 1
+    if wedding_ids:
+        logger.info(
+            "Sample matched to %d photo faces (weddings: %s)",
+            created,
+            len(wedding_ids),
+        )
+    return created
+
+
 def process_face_sample_job(
     payload: Dict[str, Any], vector_db: VectorDBService
 ) -> bool:
@@ -367,40 +419,62 @@ def process_face_sample_job(
             photos_processed=False,
         )
         if wedding_id:
-            # Trigger reprocess: push photo_process for each photo in wedding
-            redis_client = _redis()
-            photo_ids = get_wedding_photo_ids(wedding_id)
-            for pid in photo_ids:
-                redis_client.xadd_event(
-                    STREAM_KEY,
-                    "photo_process",
-                    {"photoId": pid},
-                    max_len=10000,
-                )
-            logger.info("Queued %d photos for reprocess (wedding %s)", len(photo_ids), wedding_id)
+            created = _match_sample_to_photo_faces(
+                vector_db,
+                embedding=embedding,
+                guest_id=guest_id,
+                user_id=None,
+                wedding_ids=[str(wedding_id)],
+            )
+            if created == 0:
+                _queue_photo_process_for_weddings([str(wedding_id)])
     else:
         patch_user(
             user_id,
             face_encoding_id=face_encoding_id,
             face_sample_uploaded=True,
         )
-        # Reprocess weddings where user is guest or host (so host's face is matched in their wedding)
         wedding_ids = list(
             set(
                 (payload.get("weddingIds") or [])
                 + (payload.get("hostedWeddingIds") or [])
             )
         )
-        redis_client = _redis()
-        for wid in wedding_ids:
-            photo_ids = get_wedding_photo_ids(wid)
-            for pid in photo_ids:
-                redis_client.xadd_event(
-                    STREAM_KEY, "photo_process", {"photoId": pid}, max_len=10000
-                )
         if wedding_ids:
-            logger.info("Queued reprocess for %d weddings (user %s)", len(wedding_ids), user_id)
+            wedding_ids_str = [str(w) for w in wedding_ids]
+            created = _match_sample_to_photo_faces(
+                vector_db,
+                embedding=embedding,
+                guest_id=None,
+                user_id=user_id,
+                wedding_ids=wedding_ids_str,
+            )
+            if created == 0:
+                _queue_photo_process_for_weddings(wedding_ids_str)
     return True
+
+
+def _queue_photo_process_for_weddings(wedding_ids: List[str]) -> None:
+    """
+    When no photo faces exist in Pinecone yet (e.g. sample added before photos
+    were processed), queue photo_process for all photos in these weddings.
+    When those jobs run they will search samples and create tags.
+    """
+    redis_client = _redis()
+    total = 0
+    for wid in wedding_ids:
+        photo_ids = get_wedding_photo_ids(wid)
+        for pid in photo_ids:
+            redis_client.xadd_event(
+                STREAM_KEY, "photo_process", {"photoId": pid}, max_len=10000
+            )
+            total += 1
+    if total:
+        logger.info(
+            "No photo faces in index yet; queued %d photos for processing (weddings: %s)",
+            total,
+            len(wedding_ids),
+        )
 
 
 def process_reprocess_wedding_job(payload: Dict[str, Any]) -> bool:

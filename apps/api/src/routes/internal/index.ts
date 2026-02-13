@@ -62,10 +62,14 @@ router.post(
             boundingBox,
             faceEncodingId,
         } = req.body;
+        const parsedUserId =
+            userId != null && userId !== '' && !Number.isNaN(Number(userId))
+                ? Number(userId)
+                : null;
         const tag = await photoTagRepo.create({
             photoId,
-            guestId: guestId ?? null,
-            userId: Number(userId) ?? null,
+            guestId: guestId != null && guestId !== '' ? guestId : null,
+            userId: parsedUserId,
             confidenceScore:
                 confidenceScore != null ? Number(confidenceScore) : null,
             boundingBox: boundingBox ?? undefined,

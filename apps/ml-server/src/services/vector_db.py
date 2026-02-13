@@ -120,6 +120,33 @@ class VectorDBService:
             logger.error(f"Error batch upserting: {str(e)}")
             return 0
 
+    def search_photo_faces(
+        self,
+        query_embedding: List[float],
+        wedding_ids: List[str],
+        top_k: int = 500,
+        min_score: float = 0.4,
+    ) -> List[Dict]:
+        """
+        Search for photo faces (type=photo) in the given weddings.
+        Used when a new face sample is added: match sample to existing photo faces
+        and create tags without reprocessing every photo.
+        """
+        if not wedding_ids:
+            return []
+        if len(wedding_ids) == 1:
+            filter_expr = {"$and": [{"type": "photo"}, {"wedding_id": wedding_ids[0]}]}
+        else:
+            filter_expr = {
+                "$and": [{"type": "photo"}, {"wedding_id": {"$in": wedding_ids}}]
+            }
+        return self.search_similar_faces(
+            query_embedding=query_embedding,
+            top_k=top_k,
+            min_score=min_score,
+            filter_metadata=filter_expr,
+        )
+
     def search_similar_faces(
         self,
         query_embedding: List[float],
