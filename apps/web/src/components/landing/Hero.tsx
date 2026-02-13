@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { IconSparkles } from "@/components/landing/LandingIcons";
 
@@ -136,31 +137,26 @@ export function Hero() {
                     </motion.div>
                   ))}
                 </div>
-                {/* Photo grid — "My Photos" preview */}
+                {/* Single hero photo from albums — light, warm moment */}
                 <div className="mb-4">
                   <p className="text-[#FAF8F8]/70 text-xs font-medium mb-2 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#C6A75E]" />
                     My Photos — AI-matched
                   </p>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.65 + i * 0.03, duration: 0.35 }}
-                        className={`aspect-square rounded-lg border overflow-hidden ${
-                          i === 4
-                            ? "border-[#C6A75E] ring-2 ring-[#C6A75E]/50 bg-[#C6A75E]/10 flex items-center justify-center"
-                            : "border-[#C6A75E]/15 bg-white/[0.04]"
-                        }`}
-                      >
-                        {i === 4 ? (
-                          <span className="text-[#C6A75E] font-semibold text-[10px]">You</span>
-                        ) : null}
-                      </motion.div>
-                    ))}
-                  </div>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.6, duration: 0.4 }}
+                    className="relative aspect-[4/3] w-full rounded-xl overflow-hidden border border-[#C6A75E]/20 ring-1 ring-white/[0.06]"
+                  >
+                    <Image
+                      src="/albums/front.jpeg"
+                      alt="Your wedding moments — AI finds every photo you’re in"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 380px"
+                      className="object-cover object-center"
+                    />
+                  </motion.div>
                 </div>
                 {/* Footer line */}
                 <p className="text-[#FAF8F8]/50 text-[10px] text-center border-t border-[#C6A75E]/15 pt-3">
