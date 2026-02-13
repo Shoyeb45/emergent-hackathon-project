@@ -9,6 +9,7 @@ import { ProtectedRequest } from '../../types/app-requests';
 import {
     SuccessResponse,
     SuccessCreatedResponse,
+    SuccessMsgResponse,
 } from '../../core/api-response';
 import { ForbiddenError, NotFoundError } from '../../core/api-error';
 import weddingRepo from '../../database/repositories/wedding.repo';
@@ -54,6 +55,59 @@ registry.registerPath({
         400: { description: 'Validation error' },
         403: { description: 'Only host' },
         404: { description: 'Wedding not found' },
+    },
+});
+
+registry.registerPath({
+    method: 'post',
+    path: '/weddings/{weddingId}/guests/upload-request',
+    summary: 'Request upload permission',
+    description:
+        'Guest requests permission to upload photos. Host can approve in guest list. Requires Bearer JWT.',
+    tags: ['Guests'],
+    security: [{ bearerAuth: [] }],
+    request: { params: schema.uuidParam },
+    responses: {
+        200: { description: 'Request recorded' },
+        403: { description: 'Not a guest' },
+        404: { description: 'Wedding not found' },
+    },
+});
+
+registry.registerPath({
+    method: 'get',
+    path: '/weddings/{weddingId}/guests/me',
+    summary: 'Get my guest record',
+    description:
+        'Returns the current user\'s guest record for this wedding (uploadPermission, uploadRequestedAt, rsvpStatus). 404 if not a guest. Requires Bearer JWT.',
+    tags: ['Guests'],
+    security: [{ bearerAuth: [] }],
+    request: { params: schema.uuidParam },
+    responses: {
+        200: { description: 'Guest record' },
+        403: { description: 'Access denied' },
+        404: { description: 'Wedding not found or not a guest' },
+    },
+});
+
+registry.registerPath({
+    method: 'patch',
+    path: '/weddings/{weddingId}/guests/{guestId}',
+    summary: 'Update guest (e.g. upload permission)',
+    description:
+        'Host can update guest upload permission. When granting, clears upload request. Requires Bearer JWT.',
+    tags: ['Guests'],
+    security: [{ bearerAuth: [] }],
+    request: {
+        params: schema.guestIdParam,
+        body: {
+            content: { 'application/json': { schema: schema.updateGuestBody } },
+        },
+    },
+    responses: {
+        200: { description: 'Guest updated' },
+        403: { description: 'Only host' },
+        404: { description: 'Wedding or guest not found' },
     },
 });
 
@@ -169,6 +223,83 @@ router.post(
                 errors: errors.length ? errors : undefined,
             },
         ).send(res);
+    }),
+);
+
+router.post(
+    '/upload-request',
+    validator(schema.uuidParam, ValidationSource.PARAM),
+    asyncHandler(async (req: ProtectedRequest, res) => {
+        const { weddingId } = req.params;
+        const userId = req.user.id;
+
+        const wedding = await weddingRepo.findByIdMinimal(weddingId);
+        if (!wedding) throw new NotFoundError('Wedding not found.');
+        if (wedding.hostId === userId) {
+            throw new ForbiddenError('Host already has upload permission.');
+        }
+
+        const guest = await guestRepo.findFirstByWeddingAndUser(weddingId, userId);
+        if (!guest) throw new ForbiddenError('You are not a guest of this wedding.');
+
+        await guestRepo.update(guest.id, { uploadRequestedAt: new Date() });
+
+        new SuccessMsgResponse('Upload request recorded.').send(res);
+    }),
+);
+
+router.get(
+    '/me',
+    validator(schema.uuidParam, ValidationSource.PARAM),
+    asyncHandler(async (req: ProtectedRequest, res) => {
+        const { weddingId } = req.params;
+        const userId = req.user.id;
+
+        const hostId = await weddingRepo.getHostId(weddingId);
+        if (hostId === null) throw new NotFoundError('Wedding not found.');
+        if (hostId === userId) {
+            throw new NotFoundError('Host has no guest record.');
+        }
+
+        const guest = await guestRepo.findMyGuestByWedding(weddingId, userId);
+        if (!guest) throw new NotFoundError('You are not a guest of this wedding.');
+
+        new SuccessResponse('Guest record.', guest).send(res);
+    }),
+);
+
+router.patch(
+    '/:guestId',
+    validator(schema.guestIdParam, ValidationSource.PARAM),
+    validator(schema.updateGuestBody, ValidationSource.BODY),
+    asyncHandler(async (req: ProtectedRequest, res) => {
+        const { weddingId, guestId } = req.params;
+        const userId = req.user.id;
+        const { uploadPermission } = req.body;
+
+        const hostId = await weddingRepo.getHostId(weddingId);
+        if (hostId === null) throw new NotFoundError('Wedding not found.');
+        if (hostId !== userId)
+            throw new ForbiddenError('Only the host can update guests.');
+
+        const guest = await guestRepo.findById(guestId);
+        if (!guest || guest.weddingId !== weddingId)
+            throw new NotFoundError('Guest not found.');
+
+        const data: Record<string, unknown> = {};
+        if (typeof uploadPermission === 'boolean') {
+            data.uploadPermission = uploadPermission;
+            if (uploadPermission) data.uploadRequestedAt = null;
+        }
+
+        if (Object.keys(data).length === 0) {
+            new SuccessMsgResponse('No changes.').send(res);
+            return;
+        }
+
+        const updated = await guestRepo.update(guestId, data);
+
+        new SuccessResponse('Guest updated.', updated).send(res);
     }),
 );
 

@@ -105,17 +105,120 @@ export default function WeddingEventsPage() {
 
   if (events.length === 0) {
     return (
-      <div className="rounded-2xl bg-white border border-[#C6A75E]/20 p-12 text-center">
-        <p className="text-[#2B2B2B]/70 mb-6">No events yet. Add your first event.</p>
-        {isHost && (
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-5 py-2.5 rounded-full bg-[#C6A75E] text-[#2B2B2B] font-semibold hover:shadow-gold"
-          >
-            Add Event
-          </button>
+      <>
+        <div className="rounded-2xl bg-white border border-[#C6A75E]/20 p-12 text-center">
+          <p className="text-[#2B2B2B]/70 mb-6">No events yet. Add your first event.</p>
+          {isHost && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-5 py-2.5 rounded-full bg-[#C6A75E] text-[#2B2B2B] font-semibold hover:shadow-gold"
+            >
+              Add Event
+            </button>
+          )}
+        </div>
+        {showAddModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2B2B2B]/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="rounded-2xl bg-white border border-[#C6A75E]/30 p-8 max-w-md w-full max-h-[90vh] overflow-y-auto"
+            >
+              <h3 className="font-serif text-xl font-semibold text-[#2B2B2B] mb-6">
+                Add Event
+              </h3>
+              <form onSubmit={handleAddEvent} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#2B2B2B] mb-1">
+                    Event Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newEvent.name}
+                    onChange={(e) => setNewEvent((p) => ({ ...p, name: e.target.value }))}
+                    required
+                    className="w-full rounded-xl border border-[#C6A75E]/30 px-4 py-2.5"
+                    placeholder="e.g. Haldi, Sangeet"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[#2B2B2B] mb-1">
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      value={newEvent.eventDate}
+                      onChange={(e) =>
+                        setNewEvent((p) => ({ ...p, eventDate: e.target.value }))
+                      }
+                      required
+                      className="w-full rounded-xl border border-[#C6A75E]/30 px-4 py-2.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#2B2B2B] mb-1">
+                      Start Time
+                    </label>
+                    <input
+                      type="time"
+                      value={newEvent.startTime}
+                      onChange={(e) =>
+                        setNewEvent((p) => ({ ...p, startTime: e.target.value }))
+                      }
+                      className="w-full rounded-xl border border-[#C6A75E]/30 px-4 py-2.5"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#2B2B2B] mb-1">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={newEvent.location}
+                    onChange={(e) =>
+                      setNewEvent((p) => ({ ...p, location: e.target.value }))
+                    }
+                    className="w-full rounded-xl border border-[#C6A75E]/30 px-4 py-2.5"
+                    placeholder="Venue or area"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#2B2B2B] mb-1">
+                    Description (optional)
+                  </label>
+                  <textarea
+                    value={newEvent.description}
+                    onChange={(e) =>
+                      setNewEvent((p) => ({ ...p, description: e.target.value }))
+                    }
+                    rows={2}
+                    className="w-full rounded-xl border border-[#C6A75E]/30 px-4 py-2.5 resize-none"
+                  />
+                </div>
+                {addError && <p className="text-red-600 text-sm">{addError}</p>}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="flex-1 py-2.5 rounded-full border border-[#C6A75E] text-[#C6A75E] font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={addLoading}
+                    className="flex-1 py-2.5 rounded-full bg-[#C6A75E] text-[#2B2B2B] font-semibold disabled:opacity-70"
+                  >
+                    {addLoading ? "Adding…" : "Add Event"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
         )}
-      </div>
+      </>
     );
   }
 

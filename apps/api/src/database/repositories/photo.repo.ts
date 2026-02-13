@@ -37,6 +37,15 @@ export async function findById(photoId: string) {
   });
 }
 
+export async function findManyPhotoIdsByWedding(weddingId: string) {
+  const rows = await prisma.photo.findMany({
+    where: { weddingId },
+    select: { id: true },
+    orderBy: { uploadedAt: 'asc' },
+  });
+  return rows.map((r) => r.id);
+}
+
 export async function create(data: {
   weddingId: string;
   eventId?: string | null;
@@ -109,4 +118,5 @@ export default {
   createAiQueueEntry,
   updateAiQueue,
   incrementWeddingPhotoCount,
+  findManyPhotoIdsByWedding,
 };

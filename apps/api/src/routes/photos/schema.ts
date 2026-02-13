@@ -13,6 +13,7 @@ const uploadPhotoBody = z.object({
 
 const faceSampleBody = z.object({
     imageUrl: z.string().url(),
+    guestId: z.string().uuid().optional(),
 });
 
 /** Request body for getting a presigned upload URL. Frontend will PUT file to uploadUrl. */
@@ -35,9 +36,13 @@ const confirmPhotoBody = z.object({
     caption: z.string().max(2000).optional(),
 });
 
+/** Same shape as presign for photo upload; used for face-sample file upload. */
+const presignFaceSampleBody = presignPhotoBody;
+
 registry.register('UploadPhotoBody', uploadPhotoBody);
 registry.register('FaceSampleBody', faceSampleBody);
 registry.register('PresignPhotoBody', presignPhotoBody);
+registry.register('PresignFaceSampleBody', presignFaceSampleBody);
 registry.register('ConfirmPhotoBody', confirmPhotoBody);
 
 export default {
@@ -46,5 +51,6 @@ export default {
     uploadPhotoBody,
     faceSampleBody,
     presignPhotoBody,
+    presignFaceSampleBody,
     confirmPhotoBody,
 };

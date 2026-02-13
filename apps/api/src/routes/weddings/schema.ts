@@ -46,6 +46,15 @@ const addGuestsBody = z.object({
         .max(500),
 });
 
+const guestIdParam = z.object({
+    weddingId: z.string().uuid(),
+    guestId: z.string().uuid(),
+});
+
+const updateGuestBody = z.object({
+    uploadPermission: z.boolean().optional(),
+});
+
 const updateEventBody = createEventItem.partial();
 
 registry.register('UuidParam', uuidParam);
@@ -53,14 +62,18 @@ registry.register('CreateWeddingBody', createWeddingBody);
 registry.register('UpdateWeddingBody', updateWeddingBody);
 registry.register('CreateEventsBody', createEventsBody);
 registry.register('AddGuestsBody', addGuestsBody);
+registry.register('GuestIdParam', guestIdParam);
+registry.register('UpdateGuestBody', updateGuestBody);
 registry.register('UpdateEventBody', updateEventBody);
 
 export default {
     uuidParam,
     eventIdParam,
+    guestIdParam,
     createWeddingBody,
     updateWeddingBody,
     createEventsBody,
     addGuestsBody,
+    updateGuestBody,
     updateEventBody,
 };

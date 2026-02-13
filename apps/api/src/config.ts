@@ -51,6 +51,16 @@ export const s3BucketUrl =
     process.env.S3_BUCKET_URL ??
     `https://${s3BucketName || 'bucket'}.s3.${awsRegion}.amazonaws.com`;
 
+export const redisConfig = {
+    redisHost: process.env.REDIS_HOST || 'localhost',
+    redisPort: parseInt(process.env.REDIS_PORT || '6379'),
+    redisPassword: process.env.REDIS_PASSWORD,
+    redisTls: process.env.REDIS_TLS === 'true' || false,
+};
+
+/** Redis stream for AI processing jobs (photo_process, face_sample, reprocess_wedding) */
+export const aiQueueStreamKey =
+    process.env.REDIS_AI_QUEUE_STREAM || 'ai:processing:stream';
 // SES (email)
 export const sesFromEmail = process.env.SES_FROM_EMAIL ?? '';
 export const sesFromName = process.env.SES_FROM_NAME ?? 'Wedding Invitations';

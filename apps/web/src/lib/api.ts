@@ -241,9 +241,17 @@ export const eventsApi = {
 };
 
 // Guests / Invitations
+export type Guest = {
+  id: string;
+  rsvpStatus: string;
+  uploadPermission?: boolean;
+  uploadRequestedAt?: string | null;
+  user?: { name: string; email: string };
+};
+
 export const guestsApi = {
   list: (weddingId: string, params?: { rsvpStatus?: string; search?: string }) =>
-    request<Array<{ id: string; rsvpStatus: string; user?: { name: string; email: string } }>>(
+    request<Guest[]>(
       `/weddings/${weddingId}/guests`,
       { params: params as Record<string, string> }
     ),
@@ -252,6 +260,19 @@ export const guestsApi = {
       `/weddings/${weddingId}/guests`,
       { method: "POST", body: JSON.stringify(body) }
     ),
+  me: (weddingId: string) =>
+    request<{ id: string; uploadPermission: boolean; uploadRequestedAt?: string | null; rsvpStatus: string }>(
+      `/weddings/${weddingId}/guests/me`
+    ),
+  requestUpload: (weddingId: string) =>
+    request<unknown>(`/weddings/${weddingId}/guests/upload-request`, {
+      method: "POST",
+    }),
+  updateGuest: (weddingId: string, guestId: string, body: { uploadPermission?: boolean }) =>
+    request<Guest>(`/weddings/${weddingId}/guests/${guestId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
 };
 
 // Invite (public)
@@ -306,9 +327,17 @@ export const photosApi = {
       "/photos/my-photos",
       weddingId ? { params: { weddingId } as Record<string, string> } : {}
     ),
-  faceSample: (body: { imageUrl: string }) =>
-    request<{ faceEncodingId: string }>("/photos/face-sample", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
+  faceSamplePresign: (body: { fileName: string; contentType: string }) =>
+    request<{ uploadUrl: string; key: string; publicUrl: string }>(
+      "/photos/face-sample/presign",
+      { method: "POST", body: JSON.stringify(body) }
+    ),
+  faceSample: (body: { imageUrl: string; guestId?: string }) =>
+    request<{ faceEncodingId?: string; encodingQuality?: number; accepted?: boolean }>(
+      "/photos/face-sample",
+      {
+        method: "POST",
+        body: JSON.stringify(body),
+      }
+    ),
 };

@@ -104,6 +104,18 @@ export async function findFirstByWeddingAndUser(weddingId: string, userId: numbe
   });
 }
 
+export async function findMyGuestByWedding(weddingId: string, userId: number) {
+  return prisma.guest.findFirst({
+    where: { weddingId, userId },
+    select: {
+      id: true,
+      uploadPermission: true,
+      uploadRequestedAt: true,
+      rsvpStatus: true,
+    },
+  });
+}
+
 export async function findFirstWithUploadPermission(weddingId: string, userId: number) {
   return prisma.guest.findFirst({
     where: { weddingId, userId, uploadPermission: true },
@@ -162,6 +174,7 @@ export default {
   findManyWithEncodings,
   findFirstByWeddingAndUser,
   findFirstWithUploadPermission,
+  findMyGuestByWedding,
   findExistingByWeddingAndUser,
   create,
   update,

@@ -20,7 +20,8 @@ import guestRepo from '../../database/repositories/guest.repo';
 import photoRepo from '../../database/repositories/photo.repo';
 import authMiddleware from '../../middlewares/auth.middleware';
 import { s3Service } from '../../services/s3.service';
-import { s3BucketUrl } from '../../config';
+import { s3BucketUrl, aiQueueStreamKey } from '../../config';
+import { redisClient } from '../../services/redis.service';
 import { registry } from '../../docs/swagger';
 
 registry.registerPath({
@@ -196,13 +197,27 @@ router.post(
 
         if (wedding.autoTagPhotos) {
             await photoRepo.createAiQueueEntry(photo.id, weddingId);
-            const aiUrl = process.env.AI_SERVICE_URL;
-            if (aiUrl) {
-                fetch(`${aiUrl}/api/process`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ photoId: photo.id }),
-                }).catch((e: unknown) => console.error('AI trigger failed', e));
+            if (redisClient.isReady()) {
+                redisClient
+                    .addToStream(
+                        aiQueueStreamKey,
+                        {
+                            event: 'photo_process',
+                            payload: JSON.stringify({ photoId: photo.id }),
+                            ts: String(Date.now()),
+                        },
+                        10000,
+                    )
+                    .catch((e: unknown) => console.error('AI queue push failed', e));
+            } else {
+                const aiUrl = process.env.AI_SERVICE_URL;
+                if (aiUrl) {
+                    fetch(`${aiUrl}/api/process`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ photoId: photo.id }),
+                    }).catch((e: unknown) => console.error('AI trigger failed', e));
+                }
             }
         }
 
@@ -309,13 +324,27 @@ router.post(
 
         if (wedding.autoTagPhotos) {
             await photoRepo.createAiQueueEntry(photo.id, weddingId);
-            const aiUrl = process.env.AI_SERVICE_URL;
-            if (aiUrl) {
-                fetch(`${aiUrl}/api/process`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ photoId: photo.id }),
-                }).catch((e: unknown) => console.error('AI trigger failed', e));
+            if (redisClient.isReady()) {
+                redisClient
+                    .addToStream(
+                        aiQueueStreamKey,
+                        {
+                            event: 'photo_process',
+                            payload: JSON.stringify({ photoId: photo.id }),
+                            ts: String(Date.now()),
+                        },
+                        10000,
+                    )
+                    .catch((e: unknown) => console.error('AI queue push failed', e));
+            } else {
+                const aiUrl = process.env.AI_SERVICE_URL;
+                if (aiUrl) {
+                    fetch(`${aiUrl}/api/process`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ photoId: photo.id }),
+                    }).catch((e: unknown) => console.error('AI trigger failed', e));
+                }
             }
         }
 

@@ -144,6 +144,7 @@ model Guest {
   weddingId          String    @map("wedding_id") @db.Uuid
   userId             Int?      @map("user_id") // Linked after account creation
   uploadPermission   Boolean   @default(false) @map("upload_permission")
+  uploadRequestedAt  DateTime? @map("upload_requested_at")
   invitationToken    String    @unique @map("invitation_token") @db.VarChar(64)
   invitationSentAt   DateTime? @map("invitation_sent_at")
   rsvpStatus         String    @default("pending") @map("rsvp_status") @db.VarChar(20) // pending | accepted | declined
