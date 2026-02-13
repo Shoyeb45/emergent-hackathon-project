@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { weddingsApi, type Wedding } from "@/lib/api";
+import { formatDateMedium } from "@/lib/date-time";
 
 export default function HostedWeddingsPage() {
   const [weddings, setWeddings] = useState<Wedding[]>([]);
@@ -79,9 +80,7 @@ export default function HostedWeddingsPage() {
                   {w.title}
                 </h3>
                 <p className="text-[#2B2B2B]/60 text-sm mb-2">
-                  {new Date(w.weddingDate).toLocaleDateString("en-IN", {
-                    dateStyle: "medium",
-                  })}
+                  {formatDateMedium(w.weddingDate)}
                 </p>
                 {w.venue && (
                   <p className="text-[#2B2B2B]/50 text-sm mb-4 truncate">
