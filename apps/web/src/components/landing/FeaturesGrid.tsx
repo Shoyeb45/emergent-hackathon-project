@@ -1,14 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { IconLink, IconPhoto, IconCheck, IconCalendar, IconUser, IconDownload } from "./LandingIcons";
 
 const features = [
-  { icon: "🔗", title: "Smart invitations", desc: "One link for RSVP and event info" },
-  { icon: "📸", title: "Face-match photos", desc: "AI finds you in every wedding photo" },
-  { icon: "✅", title: "RSVP tracking", desc: "Live counts and reminders" },
-  { icon: "📅", title: "Multi-event", desc: "Haldi, Sangeet, Ceremony, Reception" },
-  { icon: "👤", title: "Guest dashboard", desc: "My Photos and event access" },
-  { icon: "📥", title: "Download memories", desc: "Save and share your album" },
+  { Icon: IconLink, title: "Smart invitations", desc: "One link for RSVP and event info" },
+  { Icon: IconPhoto, title: "Face-match photos", desc: "AI finds you in every wedding photo" },
+  { Icon: IconCheck, title: "RSVP tracking", desc: "Live counts and reminders" },
+  { Icon: IconCalendar, title: "Multi-event", desc: "Haldi, Sangeet, Ceremony, Reception" },
+  { Icon: IconUser, title: "Guest dashboard", desc: "My Photos and event access" },
+  { Icon: IconDownload, title: "Download memories", desc: "Save and share your album" },
 ];
 
 export function FeaturesGrid() {
@@ -40,7 +41,7 @@ export function FeaturesGrid() {
               whileHover={{ y: -3, transition: { duration: 0.2 } }}
               className="rounded-2xl bg-white p-6 shadow-lg border border-[#C6A75E]/15 hover:shadow-gold hover:border-[#C6A75E]/30 transition-all duration-300"
             >
-              <span className="text-2xl mb-3 block">{f.icon}</span>
+              <span className="text-[#C6A75E] mb-3 flex"><f.Icon className="w-9 h-9" /></span>
               <h3 className="font-serif text-lg font-semibold text-[#2B2B2B]">{f.title}</h3>
               <p className="text-sm text-[#2B2B2B]/75 mt-1">{f.desc}</p>
             </motion.div>

@@ -17,15 +17,17 @@ export function Footer() {
       <div className="max-w-[1280px] mx-auto px-5 sm:px-6">
         <div className="w-full h-px bg-[#C6A75E]/40 mb-12" />
         <div className="flex flex-col sm:flex-row justify-between items-center gap-8">
-          <Link href="/" className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center">
             <Image
               src="/vivaah-ai.png"
               alt="Vivaah"
-              width={36}
-              height={36}
-              className="h-9 w-9 object-contain"
+              width={96}
+              height={96}
+              className="h-16 w-16 sm:h-24 sm:w-24 object-contain"
             />
-            <span className="font-serif text-[#FAF8F8] font-semibold">Vivaah</span>
+            <span className="font-serif text-[#FAF8F8] font-semibold text-xl sm:text-2xl tracking-tight not-italic">
+              vivaah<span className="text-[#C6A75E]">.ai</span>
+            </span>
           </Link>
           <nav className="flex flex-wrap justify-center gap-6 sm:gap-8 text-[#FAF8F8]/80 text-sm">
             {footerLinks.map((link) => (

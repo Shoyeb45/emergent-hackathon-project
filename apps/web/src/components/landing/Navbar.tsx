@@ -41,17 +41,17 @@ export function Navbar() {
       }`}
     >
       <nav className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 group">
+        <Link href="/" className="flex items-center">
           <Image
             src="/vivaah-ai.png"
             alt="Vivaah"
-            width={38}
-            height={38}
-            className="h-9 w-9 object-contain transition-transform group-hover:scale-105"
+            width={96}
+            height={96}
+            className="h-16 w-16 sm:h-24 sm:w-24 object-contain transition-transform group-hover:scale-105"
             priority
           />
-          <span className="font-serif font-semibold text-[#FAF8F8] text-lg tracking-tight">
-            Vivaah
+          <span className="font-serif font-semibold text-[#FAF8F8] text-xl sm:text-2xl tracking-tight not-italic">
+            vivaah<span className="text-[#C6A75E]">.ai</span>
           </span>
         </Link>
 

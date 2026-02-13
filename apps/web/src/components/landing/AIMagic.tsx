@@ -1,22 +1,39 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
+import { IconScanFace, IconChart, IconMapPin } from "./LandingIcons";
+
+// Irregular collage: 11 photos in 4×3 grid; first row 4, second 4, third row 3 (last photo spans 2 cols)
+const albumPhotos: { src: string; colSpan: number; rowSpan: number; isYou?: boolean }[] = [
+  { src: "/albums/album-11.png", colSpan: 1, rowSpan: 1 },
+  { src: "/albums/one-collage-photo.jpg", colSpan: 1, rowSpan: 1 },
+  { src: "/albums/wedding 2.jpg", colSpan: 1, rowSpan: 1 },
+  { src: "/albums/a-12.jpg", colSpan: 1, rowSpan: 1 },
+  { src: "/albums/wedding 5.jpg", colSpan: 1, rowSpan: 1, isYou: true },
+  { src: "/albums/wedding 6.jpg", colSpan: 1, rowSpan: 1 },
+  { src: "/albums/full-shot-people-posing-wedding.jpg", colSpan: 1, rowSpan: 1 },
+  { src: "/albums/wedding 7.jpg", colSpan: 1, rowSpan: 1 },
+  { src: "/albums/wedding 9.jpg", colSpan: 1, rowSpan: 1 },
+  { src: "/albums/wedding 3.jpg", colSpan: 1, rowSpan: 1 },
+  { src: "/albums/wedding-10.jpg", colSpan: 2, rowSpan: 1 },
+];
 
 const features = [
   {
-    icon: "🤖",
+    Icon: IconScanFace,
     title: "Face recognition",
     text: "Upload wedding photos once. AI identifies each guest and builds their personal gallery automatically.",
     highlight: true,
   },
   {
-    icon: "📊",
+    Icon: IconChart,
     title: "RSVP at a glance",
     text: "See who’s coming in real time. No spreadsheets, no chasing — one dashboard.",
     highlight: false,
   },
   {
-    icon: "📍",
+    Icon: IconMapPin,
     title: "Multi-event flow",
     text: "Haldi, Sangeet, Ceremony, Reception — one timeline, one gallery, one link.",
     highlight: false,
@@ -29,7 +46,7 @@ export function AIMagic() {
   return (
     <section id="ai-magic" className="py-24 sm:py-28 bg-[#5c2a4a] relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-px bg-[#C6A75E]/30" />
-      <div className="relative max-w-[1280px] mx-auto px-5 sm:px-6">
+      <div className="relative max-w-[1280px] mx-auto px-3 sm:px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -52,9 +69,9 @@ export function AIMagic() {
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="mb-16 sm:mb-20 rounded-2xl border border-[#C6A75E]/40 bg-white/[0.05] backdrop-blur p-6 sm:p-8"
+          className="mb-16 sm:mb-20 rounded-2xl border border-[#C6A75E]/40 bg-white/[0.05] backdrop-blur px-3 py-5 sm:px-4 sm:py-6"
         >
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mb-6">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mb-4 sm:mb-5">
             {flowSteps.map((step, i) => (
               <motion.span
                 key={step}
@@ -68,25 +85,37 @@ export function AIMagic() {
               </motion.span>
             ))}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <div
+            className="grid grid-cols-4 gap-1 sm:gap-1.5 w-full"
+            style={{ gridTemplateRows: "repeat(3, minmax(0, 1fr))", aspectRatio: "16/9" }}
+          >
+            {albumPhotos.map((photo, i) => (
               <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
+                key={photo.src}
+                initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.2 + i * 0.04 }}
-                className="aspect-square rounded-xl bg-[#4a1a38]/70 border-2 border-[#C6A75E]/40 relative overflow-hidden"
+                transition={{ delay: 0.1 + i * 0.03 }}
+                className={`rounded-lg border border-[#C6A75E]/40 relative overflow-hidden bg-[#4a1a38]/50 min-h-0 ${
+                  photo.colSpan === 2 ? "col-span-2" : ""
+                } ${photo.rowSpan === 2 ? "row-span-2" : ""}`}
               >
-                {i === 3 && (
-                  <span className="absolute inset-0 flex items-center justify-center text-[#C6A75E] font-semibold text-sm">
+                <Image
+                  src={encodeURI(photo.src)}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 50vw, 33vw"
+                  className="object-cover"
+                />
+                {photo.isYou && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-[#4a1a38]/80 text-[#C6A75E] font-semibold text-xs sm:text-sm backdrop-blur-[2px]">
                     You
                   </span>
                 )}
               </motion.div>
             ))}
           </div>
-          <p className="mt-4 text-[#FAF8F8]/60 text-sm text-center">
+          <p className="mt-3 text-[#FAF8F8]/60 text-sm text-center">
             Photo grid → AI face detection → Your personal gallery
           </p>
         </motion.div>
@@ -106,7 +135,7 @@ export function AIMagic() {
                   : "bg-white/[0.06] border border-[#C6A75E]/30"
               }`}
             >
-              <span className="text-3xl mb-4 block" aria-hidden>{f.icon}</span>
+              <span className="text-[#C6A75E] mb-4 flex" aria-hidden><f.Icon className="w-10 h-10" /></span>
               <h3 className="font-serif text-xl font-semibold text-[#FAF8F8] mb-2">
                 {f.title}
               </h3>

@@ -7,6 +7,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { weddingsApi, type Wedding } from "@/lib/api";
 import { formatWeddingDate } from "@/lib/date-time";
 import { motion } from "framer-motion";
+import { WeddingBackground } from "@/components/wedding/WeddingBackground";
+import {
+  WEDDING_BACKGROUND_TEMPLATES,
+  getStoredTheme,
+  setStoredTheme,
+  type WeddingBackgroundTemplateId,
+} from "@/lib/wedding-templates";
 
 export default function WeddingLayout({
   children,
@@ -21,6 +28,8 @@ export default function WeddingLayout({
   const [wedding, setWedding] = useState<Wedding | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [themeId, setThemeId] = useState<WeddingBackgroundTemplateId>("champagne");
+  const [showThemePicker, setShowThemePicker] = useState(false);
 
   useEffect(() => {
     if (!weddingId || !user) return;
@@ -33,6 +42,18 @@ export default function WeddingLayout({
       })
       .finally(() => setLoading(false));
   }, [weddingId, user]);
+
+  // useEffect(() => {
+  //   if (weddingId && typeof window !== "undefined") {
+  //     setThemeId(getStoredTheme(weddingId));
+  //   }
+  // }, [weddingId]);
+
+  const handleThemeChange = (id: WeddingBackgroundTemplateId) => {
+    setStoredTheme(weddingId, id);
+    setThemeId(id);
+    setShowThemePicker(false);
+  };
 
   if (authLoading || !user) {
     return (
@@ -47,7 +68,7 @@ export default function WeddingLayout({
 
   if (loading) {
     return (
-      <div className="p-6 sm:p-8 max-w-[1280px] mx-auto">
+      <div className="min-h-screen bg-[#FAF7F2] p-6 sm:p-8 max-w-[1280px] mx-auto">
         <div className="h-5 w-32 rounded bg-[#C6A75E]/15 animate-pulse mb-6" />
         <div className="h-10 w-64 sm:w-80 rounded bg-[#C6A75E]/10 animate-pulse mb-2" />
         <div className="h-4 w-48 rounded bg-[#C6A75E]/10 animate-pulse mb-6" />
@@ -68,7 +89,7 @@ export default function WeddingLayout({
 
   if (error || !wedding) {
     return (
-      <div className="p-8 max-w-[1280px] mx-auto">
+      <div className="min-h-screen bg-[#FAF7F2] p-8 max-w-[1280px] mx-auto">
         <div className="rounded-2xl bg-white border border-red-200 p-6 text-center max-w-md mx-auto">
           <p className="text-red-600 mb-4">{error || "Wedding not found."}</p>
           <Link
@@ -93,14 +114,76 @@ export default function WeddingLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2]">
-      <div className="p-6 sm:p-8 max-w-[1280px] mx-auto">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 text-burgundy hover:text-burgundy-dark text-sm font-medium mb-6 transition-colors"
-        >
-          <span aria-hidden>←</span> Back to dashboard
-        </Link>
+    <WeddingBackground templateId={themeId}>
+      <div className="p-6 sm:p-8 max-w-[1280px] mx-auto relative">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 text-burgundy hover:text-burgundy-dark text-sm font-medium transition-colors w-fit"
+          >
+            <span aria-hidden>←</span> Back to dashboard
+          </Link>
+          {isHost && (
+            <div className="relative" style={{ zIndex: 100 }}>
+              {/* <button
+                type="button"
+                onClick={() => setShowThemePicker((v) => !v)}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[#C6A75E]/30 text-[#2B2B2B]/80 text-sm font-medium hover:bg-white/80 hover:border-[#C6A75E]/50 transition-colors"
+                aria-expanded={showThemePicker}
+                aria-haspopup="listbox"
+                aria-label="Change page background"
+              >
+                <span className="text-base" aria-hidden>🎨</span>
+                Background
+              </button> */}
+              {showThemePicker && (
+                <>
+                  <div
+                    className="fixed inset-0"
+                    style={{ zIndex: 99 }}
+                    aria-hidden
+                    onClick={() => setShowThemePicker(false)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute right-0 top-full mt-2 w-64 rounded-xl bg-white border border-[#C6A75E]/25 shadow-lg py-2"
+                    style={{ zIndex: 101 }}
+                    role="listbox"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <p className="px-4 py-2 text-xs font-semibold text-[#2B2B2B]/60 uppercase tracking-wider">
+                      Page background
+                    </p>
+                    {WEDDING_BACKGROUND_TEMPLATES.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        role="option"
+                        aria-selected={themeId === t.id}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleThemeChange(t.id);
+                        }}
+                        className={`w-full text-left px-4 py-2.5 text-sm flex flex-col gap-0.5 transition-colors ${
+                          themeId === t.id
+                            ? "bg-burgundy/10 text-burgundy font-medium"
+                            : "text-[#2B2B2B] hover:bg-[#FAF7F2]"
+                        }`}
+                      >
+                        <span>{t.name}</span>
+                        <span className="text-xs text-[#2B2B2B]/60 font-normal">
+                          {t.description}
+                        </span>
+                      </button>
+                    ))}
+                  </motion.div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -130,9 +213,8 @@ export default function WeddingLayout({
           </span>
         </motion.div>
 
-        {/* Tabs – pill bar for clear placement */}
         <nav
-          className="flex gap-1 p-1.5 rounded-xl bg-white border border-[#C6A75E]/20 shadow-sm mb-8 w-fit"
+          className="flex gap-1 p-1.5 rounded-xl bg-white/90 backdrop-blur-sm border border-[#C6A75E]/20 shadow-sm mb-8 w-fit"
           aria-label="Wedding sections"
         >
           {tabs.map((tab) => {
@@ -158,6 +240,6 @@ export default function WeddingLayout({
 
         {children}
       </div>
-    </div>
+    </WeddingBackground>
   );
 }

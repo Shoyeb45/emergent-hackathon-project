@@ -8,6 +8,14 @@ const benefits = [
   "One link to every wedding memory",
 ];
 
+// 3×3 partition of one image: (row, col) → backgroundPosition for that tile
+const COLLAGE_SRC = "/albums/wedding 3.jpg";
+const rotations = [
+  [-2, 1.5, -1],
+  [1, 0, -1.5],
+  [-1.5, 2, -0.5],
+];
+
 export function PhotoExperience() {
   return (
     <section id="photos" className="py-24 sm:py-28 bg-[#FAF7F2]">
@@ -56,30 +64,42 @@ export function PhotoExperience() {
             </ul>
           </motion.div>
 
+          {/* Cut-type collage: one photo partitioned into 3×3 with white borders and slight rotations */}
           <motion.div
             initial={{ opacity: 0, x: 24 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             className="flex justify-center"
           >
-            <motion.div
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="w-full max-w-sm rounded-2xl bg-white shadow-xl border border-[#C6A75E]/20 p-5 hover:shadow-gold transition-shadow duration-300"
-            >
-              <div className="text-[#2B2B2B] font-semibold text-sm mb-4 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#C6A75E]" />
-                My Photos
+            <div className="relative w-full max-w-sm aspect-square bg-[#2B2B2B] rounded-xl p-3 sm:p-4">
+              <div className="absolute inset-3 sm:inset-4 grid grid-cols-3 grid-rows-3 gap-1 sm:gap-1.5">
+                {[0, 1, 2].map((row) =>
+                  [0, 1, 2].map((col) => {
+                    const i = row * 3 + col;
+                    const rot = rotations[row][col];
+                    return (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.05 * i }}
+                        className="relative overflow-hidden rounded-sm border-[3px] border-white shadow-lg bg-[#2B2B2B]"
+                        style={{
+                          transform: `rotate(${rot}deg)`,
+                          boxShadow: "0 4px 14px rgba(0,0,0,0.2)",
+                          backgroundImage: `url(${encodeURI(COLLAGE_SRC)})`,
+                          backgroundSize: "300% 300%",
+                          backgroundPosition: `${col * 50}% ${row * 50}%`,
+                        }}
+                      >
+                        <span className="absolute inset-0 block" aria-hidden />
+                      </motion.div>
+                    );
+                  })
+                )}
               </div>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-xl bg-[#FAF7F2] border border-[#C6A75E]/25"
-                  />
-                ))}
-              </div>
-              <p className="text-xs text-[#2B2B2B]/60">Your personal album — auto-built by AI</p>
-            </motion.div>
+            </div>
           </motion.div>
         </div>
 

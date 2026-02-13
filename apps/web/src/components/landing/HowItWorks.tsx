@@ -1,35 +1,36 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { IconSparkles, IconCheck, IconPhoto, IconImageStack, IconCpu } from "./LandingIcons";
 
 const steps = [
   {
     n: 1,
-    icon: "✨",
+    Icon: IconSparkles,
     label: "Create your wedding",
     sub: "Add your events and get one invite link to share.",
   },
   {
     n: 2,
-    icon: "✓",
+    Icon: IconCheck,
     label: "Guests RSVP",
     sub: "One link — they confirm in seconds. No forms, no chase.",
   },
   {
     n: 3,
-    icon: "📷",
+    Icon: IconPhoto,
     label: "Guests add a photo",
     sub: "One selfie per guest so AI can find them in every photo.",
   },
   {
     n: 4,
-    icon: "🖼️",
+    Icon: IconImageStack,
     label: "Upload the gallery",
     sub: "Drop your wedding photos once. We do the rest.",
   },
   {
     n: 5,
-    icon: "🤖",
+    Icon: IconCpu,
     label: "AI delivers",
     sub: "Everyone gets a personal “My Photos” album — automatically.",
   },
@@ -84,8 +85,8 @@ export function HowItWorks() {
                   whileHover={{ y: -4, transition: { duration: 0.2 } }}
                   className="relative w-full rounded-2xl border-2 border-[#C6A75E]/25 bg-white p-6 pt-8 shadow-lg shadow-[#5c2a4a]/5 hover:border-[#C6A75E]/50 hover:shadow-gold transition-all duration-300"
                 >
-                  <span className="text-2xl mb-3 block" aria-hidden>
-                    {step.icon}
+                  <span className="text-[#C6A75E] mb-3 flex" aria-hidden>
+                    <step.Icon className="w-9 h-9" />
                   </span>
                   <h3 className="font-serif text-lg font-semibold text-[#2B2B2B] leading-tight">
                     {step.label}
@@ -114,7 +115,7 @@ export function HowItWorks() {
                 {step.n}
               </div>
               <div>
-                <span className="text-xl" aria-hidden>{step.icon}</span>
+                <span className="text-[#C6A75E]" aria-hidden><step.Icon className="w-8 h-8" /></span>
                 <h3 className="font-serif font-semibold text-[#2B2B2B] mt-1">
                   {step.label}
                 </h3>
@@ -147,7 +148,7 @@ export function HowItWorks() {
                 </div>
                 <div className="flex-1 min-w-0 pt-4">
                   <div className="rounded-2xl border-2 border-[#C6A75E]/25 bg-white p-5 shadow-md hover:border-[#C6A75E]/40 hover:shadow-gold transition-all duration-300">
-                    <span className="text-xl" aria-hidden>{step.icon}</span>
+                    <span className="text-[#C6A75E]" aria-hidden><step.Icon className="w-8 h-8" /></span>
                     <h3 className="font-serif font-semibold text-[#2B2B2B] mt-2">
                       {step.label}
                     </h3>

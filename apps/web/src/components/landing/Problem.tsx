@@ -1,20 +1,21 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { IconCamera, IconClock, IconUsers } from "./LandingIcons";
 
 const cards = [
   {
-    icon: "📸",
+    Icon: IconCamera,
     title: "Photo chaos",
     text: "Guests scroll through thousands of images to find the few where they appear.",
   },
   {
-    icon: "⏳",
+    Icon: IconClock,
     title: "RSVP uncertainty",
     text: "Late confirmations and no-shows make catering and seating a guessing game.",
   },
   {
-    icon: "🧑‍🤝‍🧑",
+    Icon: IconUsers,
     title: "Guest coordination",
     text: "Tracking who’s coming to which event across Haldi, Sangeet, and more.",
   },
@@ -50,7 +51,7 @@ export function Problem() {
               whileHover={{ y: -6, transition: { duration: 0.25 } }}
               className="group bg-white rounded-2xl p-8 shadow-lg border-t-2 border-[#C6A75E] hover:shadow-gold transition-all duration-300"
             >
-              <span className="text-3xl mb-4 block" aria-hidden>{card.icon}</span>
+              <span className="text-[#C6A75E] mb-4 flex" aria-hidden><card.Icon className="w-10 h-10" /></span>
               <h3 className="font-serif text-xl font-semibold text-[#2B2B2B] mb-2">
                 {card.title}
               </h3>

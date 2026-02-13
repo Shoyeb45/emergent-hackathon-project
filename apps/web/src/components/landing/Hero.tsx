@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { IconSparkles } from "@/components/landing/LandingIcons";
 
 const fadeUp = { opacity: 0, y: 24 };
 const fadeUpEnd = { opacity: 1, y: 0 };
@@ -84,7 +85,7 @@ export function Hero() {
               href="/login?signup=1"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-w-[200px] px-7 py-3.5 rounded-full bg-[#C6A75E] text-[#2B2B2B] font-semibold shadow-[0_4px_20px_rgba(198,167,94,0.35)] hover:shadow-gold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span aria-hidden className="text-lg">👑</span>
+              <IconSparkles className="w-5 h-5 text-[#2B2B2B]" aria-hidden />
               Begin your wedding
             </Link>
             <Link
