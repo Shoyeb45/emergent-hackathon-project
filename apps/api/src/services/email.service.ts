@@ -1,6 +1,9 @@
+import crypto from 'crypto';
 import { mailClient } from './ses.service';
+import { s3Service } from './s3.service';
 import { sesFromEmail, sesFromName } from '../config';
 import logger from '../core/logger';
+import QRCode from 'qrcode';
 
 export interface InvitationEmailData {
     to: string;
@@ -34,6 +37,26 @@ export async function sendInvitationEmail(
         ? "We've created an account for you. You can set your password when you RSVP."
         : '';
 
+    // Generate QR code; upload to S3 for storage; embed in email via inline attachment (CID) so Gmail doesn't strip the image
+    let qrBuffer: Buffer | null = null;
+    try {
+        qrBuffer = await QRCode.toBuffer(invitationLink, {
+            errorCorrectionLevel: 'H',
+            type: 'png',
+            width: 200,
+            margin: 1,
+            color: { dark: '#6b1f3f', light: '#ffffff' },
+        });
+        const qrKey = `invitations/qr/${crypto.createHash('sha256').update(invitationLink).digest('hex').slice(0, 16)}.png`;
+        const qrUrl = await s3Service.uploadToS3(qrBuffer, qrKey, 'image/png');
+        logger.info('QR code uploaded to S3', { to, qrUrl });
+    } catch (error) {
+        logger.error('Failed to generate or upload QR code', { error, to });
+    }
+
+    // Use cid:qrcode so image is embedded in email (Gmail strips external img src URLs)
+    const qrImgSrc = qrBuffer ? 'cid:qrcode' : '';
+
     const htmlBody = `
 <!DOCTYPE html>
 <html lang="en">
@@ -42,132 +65,127 @@ export async function sendInvitationEmail(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wedding Invitation</title>
 </head>
-<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); font-family: 'Georgia', 'Times New Roman', serif;">
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0; padding: 40px 0;">
+<body style="margin: 0; padding: 0; background: #e9ecef; font-family: Georgia, 'Times New Roman', serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0; padding: 24px 0;">
         <tr>
-            <td align="center">
-                <!-- Main Container -->
-                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; background: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden; max-width: 100%;">
-                    
-                    <!-- Decorative Header -->
+            <td align="center" style="padding: 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="550" style="margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,0.12); max-width: 100%;">
                     <tr>
-                        <td style="background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 50%, #6b1f3f 100%); padding: 0; position: relative;">
-                            <!-- Gold ornamental border top -->
-                            <div style="height: 4px; background: linear-gradient(90deg, transparent 0%, #d4af37 20%, #d4af37 80%, transparent 100%);"></div>
-                            
+                        <td style="background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 100%); height: 3px;"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 36px 40px; background: #fdfbf7;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                                 <tr>
-                                    <td style="padding: 50px 40px; text-align: center;">
-                                        <!-- Decorative flourish -->
-                                        <div style="margin-bottom: 20px; font-size: 40px; color: #d4af37; line-height: 1;">✦</div>
-                                        
-                                        <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 300; letter-spacing: 3px; text-transform: uppercase; font-family: 'Georgia', serif;">
-                                            You're Invited
-                                        </h1>
-                                        
-                                        <!-- Decorative flourish -->
-                                        <div style="margin-top: 20px; font-size: 40px; color: #d4af37; line-height: 1;">✦</div>
+                                    <td align="center" style="padding-bottom: 18px;">
+                                        <span style="color: #d4af37; font-size: 28px;">✦</span>
+                                        <span style="color: #6b1f3f; font-size: 15px; margin: 0 12px; letter-spacing: 2px; text-transform: uppercase; font-weight: 300;">You're Invited</span>
+                                        <span style="color: #d4af37; font-size: 28px;">✦</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding-bottom: 14px;">
+                                        <p style="margin: 0; color: #2c2c2c; font-size: 16px; font-style: italic;">Dear <strong style="color: #6b1f3f; font-style: normal;">${guestName}</strong></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding-bottom: 14px;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                                            <tr><td style="width: 70px; height: 1px; background: #d4af37;"></td></tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding-bottom: 16px;">
+                                        <p style="margin: 0; color: #4a4a4a; font-size: 15px; line-height: 1.5;">You are cordially invited to celebrate</p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding-bottom: 18px;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            <tr>
+                                                <td style="background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 100%); border-radius: 8px; padding: 20px 24px; text-align: center;">
+                                                    <h2 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 400; letter-spacing: 0.5px; font-family: Georgia, serif;">${weddingTitle}</h2>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding-bottom: 18px;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                                            <tr>
+                                                <td style="background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 100%); border-radius: 50px; padding: 14px 32px; text-align: center;">
+                                                    <div style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.9); margin-bottom: 4px;">📅 Save the Date</div>
+                                                    <div style="font-size: 16px; font-weight: 600; color: #ffffff;">${formattedDate}</div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                ${accountMessage ? `
+                                <tr>
+                                    <td style="padding-bottom: 16px;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            <tr>
+                                                <td style="padding: 14px 16px; background: #fff9f0; border-left: 3px solid #d4af37; border-radius: 6px;">
+                                                    <p style="margin: 0; color: #6b5d3f; font-size: 13px; line-height: 1.5;"><strong>Note:</strong> ${accountMessage}</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                <tr>
+                                    <td align="center" style="padding-bottom: 16px;"><span style="color: #d4af37; font-size: 14px;">❖</span></td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding-bottom: 16px;">
+                                        <a href="${invitationLink}" style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 100%); color: #ffffff; text-decoration: none; border-radius: 50px; font-size: 15px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;">RSVP Now</a>
+                                    </td>
+                                </tr>
+                                ${qrImgSrc ? `
+                                <tr>
+                                    <td align="center" style="padding-bottom: 12px;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="60%">
+                                            <tr>
+                                                <td style="border-top: 1px solid #d4af37; padding-top: 12px; text-align: center;">
+                                                    <span style="color: #888; font-size: 11px; text-transform: uppercase;">or scan QR code</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding-bottom: 16px;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="background: #fdfbf7; border: 1px solid #f0ebe3; border-radius: 10px;">
+                                            <tr>
+                                                <td style="padding: 14px; text-align: center;">
+                                                    <img src="${qrImgSrc}" alt="RSVP QR Code" width="160" height="160" style="display: block; border-radius: 6px;" />
+                                                    <p style="margin: 8px 0 0 0; color: #6b1f3f; font-size: 11px; font-weight: 600; letter-spacing: 0.5px;">Scan to RSVP</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                ` : ''}
+                                <tr>
+                                    <td align="center" style="padding-top: 4px;">
+                                        <p style="margin: 0; color: #888; font-size: 12px; font-style: italic;">We can't wait to celebrate with you!</p>
                                     </td>
                                 </tr>
                             </table>
-                            
-                            <!-- Gold ornamental border bottom -->
-                            <div style="height: 4px; background: linear-gradient(90deg, transparent 0%, #d4af37 20%, #d4af37 80%, transparent 100%);"></div>
                         </td>
                     </tr>
-                    
-                    <!-- Content Section -->
                     <tr>
-                        <td style="padding: 50px 40px; background: #ffffff;">
-                            <!-- Greeting -->
-                            <p style="margin: 0 0 30px 0; color: #2c2c2c; font-size: 18px; line-height: 1.6; text-align: center; font-style: italic;">
-                                Dear <strong style="color: #6b1f3f; font-style: normal;">${guestName}</strong>,
-                            </p>
-                            
-                            <!-- Invitation Text -->
-                            <p style="margin: 0 0 40px 0; color: #4a4a4a; font-size: 16px; line-height: 1.8; text-align: center;">
-                                You are cordially invited to celebrate the union of
-                            </p>
-                            
-                            <!-- Wedding Title - Emphasized -->
-                            <div style="margin: 0 0 40px 0; padding: 30px; background: linear-gradient(135deg, #faf8f3 0%, #f5f0e8 100%); border-left: 4px solid #6b1f3f; border-right: 4px solid #6b1f3f; position: relative;">
-                                <!-- Decorative corner elements -->
-                                <div style="position: absolute; top: 10px; left: 10px; width: 30px; height: 30px; border-top: 2px solid #d4af37; border-left: 2px solid #d4af37;"></div>
-                                <div style="position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-top: 2px solid #d4af37; border-right: 2px solid #d4af37;"></div>
-                                <div style="position: absolute; bottom: 10px; left: 10px; width: 30px; height: 30px; border-bottom: 2px solid #d4af37; border-left: 2px solid #d4af37;"></div>
-                                <div style="position: absolute; bottom: 10px; right: 10px; width: 30px; height: 30px; border-bottom: 2px solid #d4af37; border-right: 2px solid #d4af37;"></div>
-                                
-                                <h2 style="margin: 0; color: #6b1f3f; font-size: 28px; font-weight: 400; text-align: center; letter-spacing: 1px; font-family: 'Georgia', serif;">
-                                    ${weddingTitle}
-                                </h2>
-                            </div>
-                            
-                            <!-- Date Section -->
-                            <div style="margin: 0 0 40px 0; text-align: center;">
-                                <div style="display: inline-block; background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 100%); color: #ffffff; padding: 20px 40px; border-radius: 50px; box-shadow: 0 8px 20px rgba(107, 31, 63, 0.3);">
-                                    <div style="font-size: 14px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.9; margin-bottom: 8px;">
-                                        📅 Save the Date
-                                    </div>
-                                    <div style="font-size: 18px; font-weight: 600; letter-spacing: 1px;">
-                                        ${formattedDate}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Account Message (if applicable) -->
-                            ${accountMessage ? `
-                            <div style="margin: 0 0 40px 0; padding: 20px; background: #fff9f0; border-left: 3px solid #d4af37; border-radius: 8px;">
-                                <p style="margin: 0; color: #6b5d3f; font-size: 14px; line-height: 1.6;">
-                                    ℹ️ <strong>Account Created:</strong> ${accountMessage}
-                                </p>
-                            </div>
-                            ` : ''}
-                            
-                            <!-- Decorative Divider -->
-                            <div style="margin: 40px 0; text-align: center;">
-                                <div style="display: inline-block; width: 60px; height: 1px; background: #d4af37; position: relative;">
-                                    <span style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); color: #d4af37; font-size: 14px;">❖</span>
-                                </div>
-                            </div>
-                            
-                            <!-- RSVP Button -->
-                            <div style="text-align: center; margin: 40px 0 0 0;">
-                                <a href="${invitationLink}" style="display: inline-block; padding: 18px 50px; background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 100%); color: #ffffff; text-decoration: none; border-radius: 50px; font-size: 16px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 10px 30px rgba(107, 31, 63, 0.4); transition: all 0.3s ease;">
-                                    ✨ RSVP Now ✨
-                                </a>
-                                <p style="margin: 20px 0 0 0; color: #888; font-size: 13px; font-style: italic;">
-                                    We can't wait to celebrate with you!
-                                </p>
-                            </div>
+                        <td style="background: #f8f5f0; padding: 20px 30px; text-align: center; border-top: 1px solid #e8e4dc;">
+                            <p style="margin: 0 0 8px 0; color: #6b1f3f; font-size: 13px; font-style: italic;">With love and anticipation</p>
+                            <p style="margin: 0; color: #999; font-size: 11px;">This is an automated invitation. Please do not reply.</p>
                         </td>
                     </tr>
-                    
-                    <!-- Footer Section -->
                     <tr>
-                        <td style="background: linear-gradient(135deg, #f8f5f0 0%, #f0ebe3 100%); padding: 40px; text-align: center; border-top: 1px solid #e0dcd5;">
-                            <!-- Decorative element -->
-                            <div style="margin-bottom: 20px; font-size: 24px; color: #6b1f3f;">❦</div>
-                            
-                            <p style="margin: 0 0 10px 0; color: #6b1f3f; font-size: 14px; font-style: italic; font-family: 'Georgia', serif;">
-                                With love and anticipation
-                            </p>
-                            
-                            <div style="margin: 20px 0; height: 1px; background: linear-gradient(90deg, transparent 0%, #d4af37 50%, transparent 100%);"></div>
-                            
-                            <p style="margin: 0; color: #888; font-size: 12px; line-height: 1.6;">
-                                This is an automated invitation. Please do not reply to this email.<br>
-                                If you have any questions, please contact the wedding organizers.
-                            </p>
-                        </td>
+                        <td style="background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 100%); height: 3px;"></td>
                     </tr>
-                    
-                    <!-- Bottom Decorative Border -->
-                    <tr>
-                        <td style="background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 50%, #6b1f3f 100%); padding: 0;">
-                            <div style="height: 4px; background: linear-gradient(90deg, transparent 0%, #d4af37 20%, #d4af37 80%, transparent 100%);"></div>
-                        </td>
-                    </tr>
-                    
                 </table>
             </td>
         </tr>
@@ -188,28 +206,34 @@ export async function sendInvitationEmail(
         const from = sesFromName
             ? `"${sesFromName}" <${sesFromEmail}>`
             : sesFromEmail;
+        const subject = `✨ You're Invited to ${weddingTitle}! ✨`;
 
-        await mailClient.sendEmail(
-            {
-                Source: from,
-                Destination: {
-                    ToAddresses: [to],
+        if (qrBuffer) {
+            await mailClient.sendRawEmail(
+                from,
+                to,
+                subject,
+                htmlBody,
+                {
+                    contentBase64: qrBuffer.toString('base64'),
+                    contentType: 'image/png',
+                    contentId: 'qrcode',
                 },
-                Message: {
-                    Subject: {
-                        Data: `✨ You're Invited to ${weddingTitle}! ✨`,
-                        Charset: 'UTF-8',
-                    },
-                    Body: {
-                        Html: {
-                            Data: htmlBody,
-                            Charset: 'UTF-8',
-                        },
+            );
+        } else {
+            await mailClient.sendEmail(
+                {
+                    Source: from,
+                    Destination: { ToAddresses: [to] },
+                    Message: {
+                        Subject: { Data: subject, Charset: 'UTF-8' },
+                        Body: { Html: { Data: htmlBody, Charset: 'UTF-8' } },
                     },
                 },
-            },
-            to,
-        );
+                to,
+            );
+        }
+        logger.info('Invitation email sent successfully', { to, weddingTitle });
         return { success: true };
     } catch (error) {
         logger.error('Failed to send invitation email.', { to, error });
@@ -228,13 +252,71 @@ export async function sendPasswordResetOtpEmail(
     const { to, otp } = data;
 
     const htmlBody = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Password reset</h1>
-      <p>Use this one-time password to reset your account:</p>
-      <p style="font-size: 24px; font-weight: bold; letter-spacing: 4px;">${otp}</p>
-      <p>This OTP expires in 10 minutes. If you did not request a reset, please ignore this email.</p>
-    </div>
-  `;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset</title>
+</head>
+<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); font-family: Arial, sans-serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="500" style="margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; max-width: 100%;">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 100%); padding: 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">
+                                Password Reset
+                            </h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <p style="margin: 0 0 20px 0; color: #333; font-size: 16px; line-height: 1.6;">
+                                Use this one-time password to reset your account:
+                            </p>
+                            
+                            <!-- OTP Box -->
+                            <div style="margin: 30px 0; padding: 25px; background: linear-gradient(135deg, #f8f5f0 0%, #ffffff 100%); border: 2px dashed #6b1f3f; border-radius: 8px; text-align: center;">
+                                <p style="margin: 0 0 10px 0; color: #666; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+                                    Your OTP Code
+                                </p>
+                                <p style="margin: 0; font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #6b1f3f; font-family: 'Courier New', monospace;">
+                                    ${otp}
+                                </p>
+                            </div>
+                            
+                            <!-- Warning -->
+                            <div style="margin: 30px 0; padding: 15px; background: #fff9f0; border-left: 3px solid #d4af37; border-radius: 6px;">
+                                <p style="margin: 0; color: #6b5d3f; font-size: 14px; line-height: 1.5;">
+                                    ⏱️ This OTP expires in <strong>10 minutes</strong>.<br>
+                                    If you did not request a password reset, please ignore this email.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background: #f8f5f0; padding: 20px 30px; text-align: center; border-top: 1px solid #e8e4dc;">
+                            <p style="margin: 0; color: #999; font-size: 12px; line-height: 1.5;">
+                                This is an automated email. Please do not reply.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+    `;
 
     if (!sesFromEmail) {
         logger.warn(
@@ -265,6 +347,7 @@ export async function sendPasswordResetOtpEmail(
             },
             to,
         );
+        logger.info('Password reset OTP email sent successfully', { to });
         return { success: true };
     } catch (error) {
         logger.error('Failed to send password reset OTP email.', { to, error });

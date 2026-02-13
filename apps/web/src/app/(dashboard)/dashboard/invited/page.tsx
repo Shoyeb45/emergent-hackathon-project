@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { weddingsApi, type Wedding } from "@/lib/api";
+import { formatDateMedium } from "@/lib/date-time";
 
 const rsvpBadge = (status?: string) => {
   switch (status) {
@@ -83,9 +84,7 @@ export default function InvitedWeddingsPage() {
                     </p>
                   )}
                   <p className="text-[#2B2B2B]/60 text-sm mb-3">
-                    {new Date(w.weddingDate).toLocaleDateString("en-IN", {
-                      dateStyle: "medium",
-                    })}
+                    {formatDateMedium(w.weddingDate)}
                   </p>
                   <span
                     className={`inline-block px-3 py-1 rounded-full text-xs font-medium border ${rsvpBadge(status)}`}

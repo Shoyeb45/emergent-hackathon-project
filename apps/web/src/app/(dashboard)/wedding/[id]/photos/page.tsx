@@ -6,6 +6,71 @@ import { motion } from "framer-motion";
 import { photosApi, weddingsApi, guestsApi, type Photo } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
+function PhotoFrame({
+  photo,
+  index,
+  showHoverIcon = true,
+}: {
+  photo: Photo;
+  index: number;
+  showHoverIcon?: boolean;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.03 }}
+      className="group"
+    >
+      {/* Frame: outer border + mat (padding) + inner image */}
+      <div className="relative p-2 sm:p-3 bg-white rounded-xl border border-[#C6A75E]/25 shadow-sm hover:shadow-gold/20 hover:border-[#C6A75E]/40 transition-all duration-300 hover:-translate-y-0.5">
+        {/* Inner mat */}
+        <div className="relative rounded-lg overflow-hidden bg-[#FAF7F2] border border-[#C6A75E]/15 aspect-square">
+          <a
+            href={photo.originalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full h-full"
+          >
+            <img
+              src={photo.thumbnailUrl || photo.originalUrl}
+              alt=""
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            {showHoverIcon && (
+              <span className="absolute inset-0 bg-[#2B2B2B]/0 group-hover:bg-[#2B2B2B]/15 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+                <span className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center text-burgundy text-lg shadow-lg">
+                  ◇
+                </span>
+              </span>
+            )}
+          </a>
+        </div>
+        {/* Corner accent (optional) */}
+        <div
+          className="absolute top-1.5 right-1.5 w-4 h-4 border-t-2 border-r-2 border-[#C6A75E]/40 rounded-tr pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-hidden
+        />
+      </div>
+    </motion.div>
+  );
+}
+
+function PhotoGridSkeleton() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5">
+      {[...Array(8)].map((_, i) => (
+        <div
+          key={i}
+          className="p-3 bg-white rounded-xl border border-[#C6A75E]/15 aspect-square animate-pulse"
+        >
+          <div className="w-full h-full rounded-lg bg-[#C6A75E]/10" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function WeddingPhotosPage() {
   const params = useParams();
   const weddingId = params.id as string;
@@ -220,14 +285,18 @@ export default function WeddingPhotosPage() {
 
   return (
     <div>
-      <div className="flex gap-4 mb-6 border-b border-[#C6A75E]/20 pb-2">
+      {/* In-page tabs – aligned with layout style */}
+      <nav
+        className="flex gap-1 p-1 rounded-xl bg-white border border-[#C6A75E]/20 mb-8 w-fit shadow-sm"
+        aria-label="Photos section"
+      >
         <button
           type="button"
           onClick={() => setActiveTab("gallery")}
-          className={`text-sm font-medium ${
+          className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
             activeTab === "gallery"
-              ? "text-[#C6A75E] border-b-2 border-[#C6A75E]"
-              : "text-[#2B2B2B]/70 hover:text-[#2B2B2B]"
+              ? "bg-burgundy text-[#FAF7F2] shadow-sm"
+              : "text-[#2B2B2B]/70 hover:text-[#2B2B2B] hover:bg-[#FAF7F2]"
           }`}
         >
           Wedding Gallery
@@ -235,21 +304,21 @@ export default function WeddingPhotosPage() {
         <button
           type="button"
           onClick={() => setActiveTab("my-photos")}
-          className={`text-sm font-medium ${
+          className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
             activeTab === "my-photos"
-              ? "text-[#C6A75E] border-b-2 border-[#C6A75E]"
-              : "text-[#2B2B2B]/70 hover:text-[#2B2B2B]"
+              ? "bg-burgundy text-[#FAF7F2] shadow-sm"
+              : "text-[#2B2B2B]/70 hover:text-[#2B2B2B] hover:bg-[#FAF7F2]"
           }`}
         >
           My Photos
         </button>
-      </div>
+      </nav>
 
       {activeTab === "gallery" && (
         <>
           {!myGuestLoading && canUpload && (
             <div className="mb-6">
-              <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#C6A75E] text-[#2B2B2B] font-semibold cursor-pointer hover:shadow-gold disabled:opacity-70">
+              <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-burgundy text-[#FAF7F2] font-semibold cursor-pointer hover:bg-burgundy-dark shadow-gold disabled:opacity-70 transition-colors">
                 <input
                   type="file"
                   accept="image/*"
@@ -263,8 +332,8 @@ export default function WeddingPhotosPage() {
             </div>
           )}
 
-          {!myGuestLoading && !canUpload && (
-            <div className="mb-6">
+          {!myGuestLoading && !canUpload && !isHost && (
+            <div className="mb-6 rounded-2xl bg-white border border-[#C6A75E]/20 p-5">
               <button
                 type="button"
                 onClick={async () => {
@@ -279,12 +348,12 @@ export default function WeddingPhotosPage() {
                   }
                 }}
                 disabled={uploadRequestSent || uploadRequestLoading}
-                className="px-5 py-2.5 rounded-full border border-[#C6A75E] text-[#C6A75E] font-medium hover:bg-[#C6A75E]/10 disabled:opacity-70"
+                className="px-5 py-2.5 rounded-full border-2 border-[#C6A75E] text-[#C6A75E] font-medium hover:bg-[#C6A75E]/10 disabled:opacity-70 transition-colors"
               >
                 {uploadRequestLoading ? "Sending…" : uploadRequestSent ? "Request sent" : "Request to Upload"}
               </button>
               {uploadRequestSent && (
-                <p className="mt-2 text-sm text-[#2B2B2B]/70">
+                <p className="mt-3 text-sm text-[#2B2B2B]/70">
                   Request sent. The host can enable upload permission for you.
                 </p>
               )}
@@ -292,39 +361,26 @@ export default function WeddingPhotosPage() {
           )}
 
           {galleryLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="w-10 h-10 border-2 border-[#C6A75E]/30 border-t-[#C6A75E] rounded-full animate-spin" />
+            <div>
+              <p className="text-[#2B2B2B]/50 text-sm font-medium uppercase tracking-wider mb-4">Loading gallery…</p>
+              <PhotoGridSkeleton />
             </div>
           ) : galleryPhotos.length === 0 ? (
-            <div className="rounded-2xl bg-white border border-[#C6A75E]/20 p-12 text-center">
-              <p className="text-[#2B2B2B]/70">No photos in the gallery yet.</p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl bg-white border border-[#C6A75E]/20 shadow-sm p-12 text-center"
+            >
+              <span className="text-4xl mb-4 block opacity-70">📷</span>
+              <h3 className="font-serif text-lg font-semibold text-[#2B2B2B] mb-2">No photos yet</h3>
+              <p className="text-[#2B2B2B]/65 max-w-sm mx-auto">
+                {canUpload ? "Upload the first photo to start the gallery." : "Photos will appear here once the host adds them."}
+              </p>
+            </motion.div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5">
               {galleryPhotos.map((photo, i) => (
-                <motion.div
-                  key={photo.id || i}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.02 }}
-                  className="aspect-square rounded-xl overflow-hidden bg-[#FAF7F2] border border-[#C6A75E]/20 hover:ring-2 hover:ring-[#C6A75E]/40 transition-all"
-                >
-                  <a
-                    href={photo.originalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full h-full relative group"
-                  >
-                    <img
-                      src={photo.thumbnailUrl || photo.originalUrl}
-                      alt=""
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <span className="absolute inset-0 bg-[#2B2B2B]/0 group-hover:bg-[#2B2B2B]/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[#C6A75E] text-2xl">◇</span>
-                    </span>
-                  </a>
-                </motion.div>
+                <PhotoFrame key={photo.id || i} photo={photo} index={i} showHoverIcon />
               ))}
             </div>
           )}
@@ -334,25 +390,27 @@ export default function WeddingPhotosPage() {
       {activeTab === "my-photos" && (
         <>
           {myPhotosLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <div className="w-10 h-10 border-2 border-[#C6A75E]/30 border-t-[#C6A75E] rounded-full animate-spin" />
-              <p className="text-[#2B2B2B]/70">Loading your photos…</p>
+            <div>
+              <p className="text-[#2B2B2B]/50 text-sm font-medium uppercase tracking-wider mb-4">Loading your photos…</p>
+              <PhotoGridSkeleton />
             </div>
           ) : myPhotos.length === 0 ? (
-            <div className="rounded-2xl bg-white border border-[#C6A75E]/20 p-12 text-center">
-              <p className="text-[#2B2B2B]/70 mb-4">
-                Upload your photo to find your memories.
-              </p>
-              <p className="text-sm text-[#2B2B2B]/60 mb-4">
-                Add a clear photo of your face so our AI can match you in
-                wedding photos.
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl bg-white border border-[#C6A75E]/20 shadow-sm p-10 sm:p-12 text-center"
+            >
+              <span className="text-4xl mb-4 block opacity-70">✨</span>
+              <h3 className="font-serif text-lg font-semibold text-[#2B2B2B] mb-2">Find your photos</h3>
+              <p className="text-[#2B2B2B]/65 mb-6 max-w-md mx-auto">
+                Add a clear photo of your face so we can match you in wedding photos and show only yours here.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <button
                   type="button"
                   onClick={openCamera}
                   disabled={faceSampleUploading}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#C6A75E] text-[#2B2B2B] font-semibold hover:shadow-gold disabled:opacity-70 min-w-[180px]"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-burgundy text-[#FAF7F2] font-semibold hover:bg-burgundy-dark disabled:opacity-70 min-w-[180px] transition-colors"
                 >
                   <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -362,7 +420,7 @@ export default function WeddingPhotosPage() {
                   {faceSampleUploading ? "Uploading…" : "Take photo"}
                 </button>
                 <span className="text-[#2B2B2B]/40 text-sm hidden sm:inline">or</span>
-                <label className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border-2 border-[#C6A75E] text-[#C6A75E] font-semibold cursor-pointer hover:bg-[#C6A75E]/10 disabled:opacity-70 min-w-[180px]">
+                <label className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full border-2 border-[#C6A75E] text-[#C6A75E] font-semibold cursor-pointer hover:bg-[#C6A75E]/10 disabled:opacity-70 min-w-[180px] transition-colors">
                   <input
                     type="file"
                     accept="image/*"
@@ -377,32 +435,13 @@ export default function WeddingPhotosPage() {
                 </label>
               </div>
               {faceSampleError && (
-                <p className="mt-3 text-sm text-red-600">{faceSampleError}</p>
+                <p className="mt-4 text-sm text-red-600 bg-red-50/80 rounded-lg px-3 py-2 max-w-md mx-auto">{faceSampleError}</p>
               )}
-            </div>
+            </motion.div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5">
               {myPhotos.map((photo, i) => (
-                <motion.div
-                  key={photo.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.02 }}
-                  className="aspect-square rounded-xl overflow-hidden bg-[#FAF7F2] border border-[#C6A75E]/20"
-                >
-                  <a
-                    href={photo.originalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full h-full"
-                  >
-                    <img
-                      src={photo.thumbnailUrl || photo.originalUrl}
-                      alt=""
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    />
-                  </a>
-                </motion.div>
+                <PhotoFrame key={photo.id} photo={photo} index={i} showHoverIcon />
               ))}
             </div>
           )}
@@ -412,9 +451,9 @@ export default function WeddingPhotosPage() {
       {showCameraModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2B2B2B]/80 backdrop-blur-sm">
           <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
+            initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="rounded-2xl bg-white border border-[#C6A75E]/30 p-6 max-w-lg w-full overflow-hidden"
+            className="rounded-2xl bg-white border border-[#C6A75E]/25 shadow-xl p-6 max-w-lg w-full overflow-hidden"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-serif text-lg font-semibold text-[#2B2B2B]">
@@ -423,7 +462,7 @@ export default function WeddingPhotosPage() {
               <button
                 type="button"
                 onClick={closeCamera}
-                className="p-2 rounded-full text-[#2B2B2B]/60 hover:bg-[#FAF7F2] hover:text-[#2B2B2B]"
+                className="p-2 rounded-full text-[#2B2B2B]/60 hover:bg-[#FAF7F2] hover:text-[#2B2B2B] transition-colors"
                 aria-label="Close"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -448,7 +487,7 @@ export default function WeddingPhotosPage() {
               <button
                 type="button"
                 onClick={closeCamera}
-                className="flex-1 py-2.5 rounded-full border border-[#C6A75E] text-[#C6A75E] font-medium"
+                className="flex-1 py-2.5 rounded-xl border border-[#C6A75E]/40 text-[#2B2B2B] font-medium hover:bg-[#FAF7F2] transition-colors"
               >
                 Cancel
               </button>
@@ -456,7 +495,7 @@ export default function WeddingPhotosPage() {
                 type="button"
                 onClick={captureFromCamera}
                 disabled={!!cameraError}
-                className="flex-1 py-2.5 rounded-full bg-[#C6A75E] text-[#2B2B2B] font-semibold disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-burgundy text-[#FAF7F2] font-semibold hover:bg-burgundy-dark disabled:opacity-50 transition-colors"
               >
                 Capture
               </button>

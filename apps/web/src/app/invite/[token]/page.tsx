@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { inviteApi, rsvpApi, setStoredToken } from "@/lib/api";
+import { formatWeddingDate } from "@/lib/date-time";
 
 export default function InvitePage() {
   const params = useParams();
@@ -141,9 +142,7 @@ export default function InvitePage() {
             {wedding.title}
           </h1>
           <p className="text-[#F8F8F8]/80 text-sm">
-            {new Date(wedding.weddingDate).toLocaleDateString("en-IN", {
-              dateStyle: "long",
-            })}
+            {formatWeddingDate(wedding.weddingDate)}
           </p>
           {wedding.venue && (
             <p className="text-[#F8F8F8]/70 text-sm mt-1">{wedding.venue}</p>

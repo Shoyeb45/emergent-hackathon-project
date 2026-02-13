@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Invitation</title>
+</head>
+<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%); font-family: 'Georgia', 'Times New Roman', serif;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 0; padding: 30px 0;">
+        <tr>
+            <td align="center">
+                <!-- Main Card Container -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="550" style="margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden; max-width: 100%;">
+                    
+                    <!-- Decorative Top Border -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 50%, #6b1f3f 100%); padding: 0;">
+                            <div style="height: 3px; background: linear-gradient(90deg, transparent 0%, #d4af37 20%, #d4af37 80%, transparent 100%);"></div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 45px 40px; background: linear-gradient(135deg, #fdfbf7 0%, #ffffff 100%);">
+                            
+                            <!-- Decorative Top Flourish -->
+                            <div style="text-align: center; margin-bottom: 25px;">
+                                <div style="display: inline-block; position: relative;">
+                                    <span style="color: #d4af37; font-size: 32px; line-height: 1;">✦</span>
+                                    <span style="color: #6b1f3f; font-size: 16px; margin: 0 15px; letter-spacing: 3px; text-transform: uppercase; font-weight: 300;">You're Invited</span>
+                                    <span style="color: #d4af37; font-size: 32px; line-height: 1;">✦</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Greeting -->
+                            <p style="margin: 0 0 20px 0; color: #2c2c2c; font-size: 16px; text-align: center; font-style: italic;">
+                                Dear <strong style="color: #6b1f3f; font-style: normal;">${guestName}</strong>
+                            </p>
+                            
+                            <!-- Divider -->
+                            <div style="margin: 20px auto; width: 80px; height: 1px; background: linear-gradient(90deg, transparent 0%, #d4af37 50%, transparent 100%);"></div>
+                            
+                            <!-- Invitation Message -->
+                            <p style="margin: 20px 0; color: #4a4a4a; font-size: 15px; line-height: 1.6; text-align: center;">
+                                You are cordially invited to celebrate
+                            </p>
+                            
+                            <!-- Wedding Title Box -->
+                            <div style="margin: 25px 0; padding: 25px 20px; background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 100%); border-radius: 8px; box-shadow: 0 8px 24px rgba(107, 31, 63, 0.3); position: relative;">
+                                <!-- Decorative corners -->
+                                <div style="position: absolute; top: 8px; left: 8px; width: 20px; height: 20px; border-top: 2px solid #d4af37; border-left: 2px solid #d4af37;"></div>
+                                <div style="position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border-top: 2px solid #d4af37; border-right: 2px solid #d4af37;"></div>
+                                <div style="position: absolute; bottom: 8px; left: 8px; width: 20px; height: 20px; border-bottom: 2px solid #d4af37; border-left: 2px solid #d4af37;"></div>
+                                <div style="position: absolute; bottom: 8px; right: 8px; width: 20px; height: 20px; border-bottom: 2px solid #d4af37; border-right: 2px solid #d4af37;"></div>
+                                
+                                <h2 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 400; text-align: center; letter-spacing: 1px; font-family: 'Georgia', serif; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                    weddingTitle
+                                </h2>
+                            </div>
+                            
+                            <!-- Date Badge -->
+                            <div style="margin: 25px 0; text-align: center;">
+                                <div style="display: inline-block; background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 100%); color: #ffffff; padding: 16px 35px; border-radius: 50px; box-shadow: 0 6px 20px rgba(107, 31, 63, 0.3);">
+                                    <div style="font-size: 12px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.9; margin-bottom: 5px;">
+                                        📅 Save the Date
+                                    </div>
+                                    <div style="font-size: 16px; font-weight: 600; letter-spacing: 0.5px;">
+                                        ${formattedDate}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Account Message (compact) -->
+                            ${accountMessage ? `
+                            <div style="margin: 20px 0; padding: 15px; background: #fff9f0; border-left: 3px solid #d4af37; border-radius: 6px;">
+                                <p style="margin: 0; color: #6b5d3f; font-size: 13px; line-height: 1.5;">
+                                    <strong>Note:</strong> ${accountMessage}
+                                </p>
+                            </div>
+                            ` : ''}
+                            
+                            <!-- Decorative Divider -->
+                            <div style="margin: 25px auto; text-align: center;">
+                                <span style="color: #d4af37; font-size: 16px;">❖</span>
+                            </div>
+                            
+                            <!-- RSVP Section with QR Code -->
+                            <div style="text-align: center; margin: 25px 0 10px 0;">
+                                <!-- RSVP Button -->
+                                <a href="${invitationLink}" style="display: inline-block; padding: 16px 45px; background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 100%); color: #ffffff; text-decoration: none; border-radius: 50px; font-size: 15px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; box-shadow: 0 8px 25px rgba(107, 31, 63, 0.4);">
+                                    ✨ RSVP Now ✨
+                                </a>
+                                
+                                ${qrCodeDataUrl ? `
+                                <!-- OR Divider -->
+                                <div style="margin: 20px 0; position: relative;">
+                                    <div style="height: 1px; background: linear-gradient(90deg, transparent 0%, #d4af37 40%, #d4af37 60%, transparent 100%);"></div>
+                                    <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fdfbf7; padding: 0 15px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">or scan QR code</span>
+                                </div>
+                                
+                                <!-- QR Code Box -->
+                                <div style="margin: 20px auto; display: inline-block; padding: 15px; background: linear-gradient(135deg, #ffffff 0%, #fdfbf7 100%); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid #f0ebe3;">
+                                    <img src="${qrCodeDataUrl}" alt="RSVP QR Code" style="display: block; width: 180px; height: 180px; border-radius: 8px;" />
+                                    <p style="margin: 12px 0 0 0; color: #6b1f3f; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">
+                                        Scan to RSVP
+                                    </p>
+                                </div>
+                                ` : ''}
+                                
+                                <p style="margin: 15px 0 0 0; color: #888; font-size: 12px; font-style: italic;">
+                                    We can't wait to celebrate with you!
+                                </p>
+                            </div>
+                            
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #f8f5f0 0%, #f0ebe3 100%); padding: 25px 30px; text-align: center; border-top: 1px solid #e8e4dc;">
+                            <div style="margin-bottom: 12px; color: #d4af37; font-size: 20px;">❦</div>
+                            <p style="margin: 0 0 12px 0; color: #6b1f3f; font-size: 13px; font-style: italic; font-family: 'Georgia', serif;">
+                                With love and anticipation
+                            </p>
+                            <div style="margin: 12px auto; width: 60px; height: 1px; background: #d4af37;"></div>
+                            <p style="margin: 12px 0 0 0; color: #999; font-size: 11px; line-height: 1.5;">
+                                This is an automated invitation. Please do not reply to this email.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Decorative Bottom Border -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #6b1f3f 0%, #8b2f4f 50%, #6b1f3f 100%); padding: 0;">
+                            <div style="height: 3px; background: linear-gradient(90deg, transparent 0%, #d4af37 20%, #d4af37 80%, transparent 100%);"></div>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
